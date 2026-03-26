@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "91325074390",
+    "project_id": "hayateli-c6101",
+    "storage_bucket": "hayateli-c6101.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91325074390:android:c71a9522d671d8e2073277",
+        "android_client_info": {
+          "package_name": "com.kizilbayrak.hayat_eli_mobil_uygulamasi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClzf_HIpn0Km2SCQNDbVrowIvD3LOlwQM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
