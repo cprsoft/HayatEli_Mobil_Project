@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hayat_eli_mobil_uygulamasi/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Manuel Mock Sınıfları (Paket bağımlılığı olmadan)
 class MockFirebaseAuth implements FirebaseAuth {
@@ -29,6 +30,7 @@ class MockFirebaseAuth implements FirebaseAuth {
 }
 
 class MockUserCredential implements UserCredential {
+  @override
   final User? user;
   MockUserCredential(this.user);
   @override
@@ -53,7 +55,7 @@ void main() {
   group('E-posta Kayıt ve Doğrulama Manuel Testi', () {
     test('Yeni kullanıcı için mail tetiklenmeli', () async {
       final mockAuth = MockFirebaseAuth();
-      final authService = AuthService(auth: mockAuth);
+      final authService = AuthService(auth: mockAuth, firestore: FirebaseFirestore.instance);
 
       await authService.registerWithEmail(email: 'test@test.com', password: '123Password!');
 
@@ -64,7 +66,7 @@ void main() {
     test('Mevcut ama onaylanmamış kullanıcıyı tekrar tetiklemeli', () async {
       final mockAuth = MockFirebaseAuth();
       mockAuth.shouldFailWithEmailInUse = true;
-      final authService = AuthService(auth: mockAuth);
+      final authService = AuthService(auth: mockAuth, firestore: FirebaseFirestore.instance);
 
       await authService.registerWithEmail(email: 'test@test.com', password: '123Password!');
 

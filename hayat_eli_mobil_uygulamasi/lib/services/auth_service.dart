@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 
@@ -175,7 +178,8 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
-        return 'Bu telefon numarası zaten hesabınıza bağlı.';
+        // Zaten bağlıysa amaç hasıl olmuştur, hata döndürme (başarı say)
+        return null;
       }
       if (e.code == 'credential-already-in-use') {
         return 'Bu telefon numarası başka bir hesap tarafından kullanılıyor.';
@@ -201,7 +205,8 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
-        return 'Bu e-posta zaten hesabınıza bağlı.';
+        // Zaten bağlıysa hata döndürme (başarı say)
+        return null; 
       }
       if (e.code == 'credential-already-in-use') {
         return 'Bu e-posta adresi başka bir hesap tarafından kullanılıyor.';
@@ -303,10 +308,112 @@ class AuthService {
   }
 
   // Anlık kullanıcı
+
+  // ────────────────────────────────────────
+  // 10. E-POSTA OTP (6 HANELİ KOD) SİSTEMİ
+  // ────────────────────────────────────────
+
+  /// E-postaya 6 haneli doğrulama kodu gönderir (Firestore Extension tetikler)
+  Future<String?> sendEmailOtp({required String email}) async {
+    try {
+      // 1. 6 Haneli rastgele kod üret
+      final random = Random();
+      final otpCode = (100000 + random.nextInt(900000)).toString();
+
+      // 2. Doğrulama kaydını oluştur (5 dakika geçerli)
+      final expiresAt = DateTime.now().add(const Duration(minutes: 5));
+      await firestore.collection('temp_verifications').doc(email).set({
+        'code': otpCode,
+        'expiresAt': expiresAt.toIso8601String(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // 3. E-posta gönderimini tetikle (Trigger Email Extension koleksiyonu)
+      await firestore.collection('mail').add({
+        'to': email,
+        'message': {
+          'subject': 'Hayat Eli - Doğrulama Kodu',
+          'html': '''
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #E53935;">Hayat Eli Doğrulama</h2>
+              <p>Uygulamamıza kayıt olmak için doğrulama kodunuz:</p>
+              <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333; margin: 20px 0;">
+                $otpCode
+              </div>
+              <p style="color: #666; font-size: 12px;">Bu kod 5 dakika süreyle geçerlidir. Eğer bu talebi siz yapmadıysanız lütfen bu e-postayı dikkate almayın.</p>
+            </div>
+          ''',
+        },
+      });
+
+      return null; // Başarılı
+    } catch (e) {
+      return 'E-posta kodu gönderilemedi: $e';
+    }
+  }
+
+  /// Kullanıcının girdiği 6 haneli kodu kontrol eder
+  Future<bool> verifyEmailOtp({required String email, required String code}) async {
+    try {
+      final doc = await firestore.collection('temp_verifications').doc(email).get();
+      if (!doc.exists) return false;
+
+      final data = doc.data()!;
+      final correctCode = data['code'] as String;
+      final expiresAt = DateTime.parse(data['expiresAt'] as String);
+
+      if (DateTime.now().isAfter(expiresAt)) {
+        // Süresi dolmuş
+        await firestore.collection('temp_verifications').doc(email).delete();
+        return false;
+      }
+
+      if (correctCode == code) {
+        // Başarılı, kaydı silebiliriz (veya kalsın, biz state'i güncelleriz)
+        await firestore.collection('temp_verifications').doc(email).delete();
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   User? get currentUser => auth.currentUser;
 
   /// Mevcut oturumun JWT (ID Token) değerini getirir
   Future<String?> getIdToken() async {
     return await auth.currentUser?.getIdToken();
+  }
+
+  // ────────────────────────────────────────
+  // PROFİL FOTOĞRAFI UPLOAD (Firebase Storage)
+  // ────────────────────────────────────────
+
+  /// Fotoğrafı Storage'a yükler, indirme URL'ini döner.
+  /// Hata durumunda null döner (kayıt yine de devam eder).
+  Future<String?> uploadProfileImage({
+    required String uid,
+    required File imageFile,
+  }) async {
+    try {
+      // Güvenli yol: sadece uid ile isimlendirilen klasöre yaz
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('users')
+          .child(uid)
+          .child('profile.jpg');
+
+      final uploadTask = await ref.putFile(
+        imageFile,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+
+      return await uploadTask.ref.getDownloadURL();
+    } catch (e) {
+      // Upload başarısız olursa kayıt iptal etme, sadece null dön
+      return null;
+    }
   }
 }

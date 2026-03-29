@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/auth_service.dart';
+import '../controllers/forgot_password_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,44 +12,10 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  bool _isLoading = false;
-  String? _message;
-  bool _isError = false;
 
-  void _resetPassword() async {
+  void _resetPassword() {
     final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      setState(() {
-        _message = "Lütfen e-posta adresinizi girin.";
-        _isError = true;
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _message = null;
-    });
-
-    final authService = ref.read(authServiceProvider);
-    final error = await authService.sendPasswordReset(email: email);
-
-    if (!mounted) return;
-
-    if (error == null) {
-      setState(() {
-        _isLoading = false;
-        _message = "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi. Lütfen gelen kutunuzu kontrol edin.";
-        _isError = false;
-        _emailController.clear();
-      });
-    } else {
-      setState(() {
-        _isLoading = false;
-        _message = error;
-        _isError = true;
-      });
-    }
+    ref.read(forgotPasswordControllerProvider.notifier).sendPasswordReset(email);
   }
 
   @override
@@ -60,6 +26,14 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(forgotPasswordControllerProvider);
+
+    ref.listen(forgotPasswordControllerProvider, (previous, next) {
+      if (next.isSuccess && (previous == null || !previous.isSuccess)) {
+        _emailController.clear();
+      }
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -71,7 +45,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -111,29 +85,29 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_message != null)
+              if (state.message != null)
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _isError ? Colors.red.shade50 : Colors.green.shade50,
+                    color: state.isError ? Colors.red.shade50 : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _isError ? Colors.red.shade300 : Colors.green.shade300,
+                      color: state.isError ? Colors.red.shade300 : Colors.green.shade300,
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        _isError ? Icons.error_outline : Icons.check_circle_outline,
-                        color: _isError ? Colors.red : Colors.green,
+                        state.isError ? Icons.error_outline : Icons.check_circle_outline,
+                        color: state.isError ? Colors.red : Colors.green,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _message!,
+                          state.message!,
                           style: GoogleFonts.outfit(
-                            color: _isError ? Colors.red.shade700 : Colors.green.shade700,
+                            color: state.isError ? Colors.red.shade700 : Colors.green.shade700,
                             fontSize: 13,
                           ),
                         ),
@@ -145,7 +119,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               SizedBox(
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _resetPassword,
+                  onPressed: state.isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFB71C1C),
                     shape: RoundedRectangleBorder(
@@ -153,7 +127,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     ),
                     elevation: 2,
                   ),
-                  child: _isLoading
+                  child: state.isLoading
                       ? const SizedBox(
                           height: 22,
                           width: 22,

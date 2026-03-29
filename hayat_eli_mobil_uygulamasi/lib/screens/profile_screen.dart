@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
+import 'sign_in.dart';
 import 'main_scaffold.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -242,9 +243,18 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () async {
               // Firebase signout: JWT ve yerel tüm oturum bilgilerini temizler
               await ref.read(authServiceProvider).signOut();
-              // Çıkıştan sonra ana menüye (index 0) dön
+              
+              // Bottom Nav'ı sıfırla (tekrar girince Home'dan başlasın)
               ref.read(bottomNavIndexProvider.notifier).setIndex(0);
-              if (context.mounted) Navigator.pop(context);
+              
+              if (context.mounted) {
+                // Giriş ekranına yönlendir ve tüm geçmişi temizle
+                Navigator.pushAndRemoveUntil(
+                  context, 
+                  MaterialPageRoute(builder: (_) => const SignInScreen()),
+                  (route) => false,
+                );
+              }
             },
             child: const Text('Çıkış Yap', style: TextStyle(color: Colors.red)),
           ),

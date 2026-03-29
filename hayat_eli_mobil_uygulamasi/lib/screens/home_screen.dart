@@ -5,7 +5,6 @@ import '../widgets/custom_sos_button.dart';
 import '../widgets/live_location_card.dart';
 import '../services/auth_service.dart';
 import 'sign_in.dart';
-import 'sign_up.dart';
 import 'main_scaffold.dart';
 
 class HomeScreen extends ConsumerWidget {

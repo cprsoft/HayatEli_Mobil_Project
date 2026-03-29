@@ -131,6 +131,53 @@ class UserModel {
         profilePictureUrl: map['profilePictureUrl'],
       );
 
+  /// UserModel kopyalama (copyWith)
+  UserModel copyWith({
+    String? uid,
+    String? firstName,
+    String? lastName,
+    String? tcNo,
+    String? citizenship,
+    String? passportNo,
+    DateTime? birthDate,
+    String? gender,
+    String? email,
+    String? phone,
+    bool? isEmailVerified,
+    bool? isPhoneVerified,
+    String? bloodType,
+    String? chronicDiseases,
+    String? allergies,
+    String? currentMedications,
+    List<EmergencyContact>? emergencyContacts,
+    DateTime? createdAt,
+    bool? isProfileComplete,
+    String? profilePictureUrl,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      tcNo: tcNo ?? this.tcNo,
+      citizenship: citizenship ?? this.citizenship,
+      passportNo: passportNo ?? this.passportNo,
+      birthDate: birthDate ?? this.birthDate,
+      gender: gender ?? this.gender,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
+      bloodType: bloodType ?? this.bloodType,
+      chronicDiseases: chronicDiseases ?? this.chronicDiseases,
+      allergies: allergies ?? this.allergies,
+      currentMedications: currentMedications ?? this.currentMedications,
+      emergencyContacts: emergencyContacts ?? this.emergencyContacts,
+      createdAt: createdAt ?? this.createdAt,
+      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+    );
+  }
+
   /// Tam ad
   String get fullName => '$firstName $lastName';
 }
