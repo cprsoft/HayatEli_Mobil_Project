@@ -9,12 +9,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 import '../services/cloud_tts_service.dart';
 import '../services/route_service.dart';
 import '../logic/navigation_logic.dart';
 import '../widgets/nav_controls.dart';
 import '../widgets/nav_bottom_sheets.dart';
+import '../utils/map_styles.dart';
 
 class RouteMapScreen extends StatefulWidget {
   final String targetName;
@@ -44,8 +47,9 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
   // Cloud TTS + Audio Player
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isTtsEnabled = true;
-  String _selectedVoiceGender = 'female';
-  String _selectedVoiceId = CloudTtsService.defaultFemaleVoiceId;
+  String _selectedVoiceGender = 'male';
+  String _selectedVoiceId = CloudTtsService.defaultMaleVoiceId;
+  double _currentSpeed = 0.0; // km/h
   bool _isSpeaking = false;
 
   // Alternatif Rotalar State
@@ -206,7 +210,26 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
 
       setState(() {
         remainingDistanceText = _formatDistance(distToDest);
+        _currentSpeed = pos.speed * 3.6; // m/s to km/h
         _updateNavMarker(currentLoc, bearing);
+        
+        // Periyodik Gece Modu Kontrolü (Dinamik)
+        _checkDayNightStyle(currentLoc);
+
+        // Rota Başlangıcına Bağlantı Çizgisi (Dotted Line)
+        if (routePoints.isNotEmpty) {
+          _polylines.removeWhere((p) => p.polylineId.value == 'connect_to_start');
+          final distToStart = calcDistance(currentLoc, routePoints.first);
+          if (distToStart > 10) { // Sadece 10 metreden fazlaysa göster
+            _polylines.add(Polyline(
+              polylineId: const PolylineId('connect_to_start'),
+              points: [currentLoc, routePoints.first],
+              color: Colors.grey.withOpacity(0.7),
+              width: 5,
+              patterns: [PatternItem.dash(15), PatternItem.gap(10)],
+            ));
+          }
+        }
       });
 
       _mapController?.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(target: currentLoc, zoom: 19, tilt: 65, bearing: bearing)));
@@ -243,9 +266,47 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
         }
       }
 
-      // Recalc
-      if (_distanceToPolyline(currentLoc) > 70) _recalculateLocal(currentLoc);
+      // Recalc (Hız ve Mesafe Filtresi ile Jitter Engelleme)
+      final dOff = _distanceToPolyline(currentLoc);
+      if (pos.speed > 2.0 && dOff > 85) {
+        _recalculateLocal(currentLoc);
+      }
     });
+  }
+
+  DateTime? _lastStyleCheck;
+  bool _isNightMode = false;
+
+  Future<void> _checkDayNightStyle(LatLng loc) async {
+    final now = DateTime.now();
+    // 30 dakikada bir kontrol et veya ilk açılışta
+    if (_lastStyleCheck != null && now.difference(_lastStyleCheck!).inMinutes < 30) return;
+    _lastStyleCheck = now;
+
+    try {
+      final url = Uri.parse('https://api.sunrise-sunset.org/json?lat=${loc.latitude}&lng=${loc.longitude}&formatted=0');
+      final resp = await http.get(url);
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body)['results'];
+        final sunrise = DateTime.parse(data['sunrise']).toLocal();
+        final sunset = DateTime.parse(data['sunset']).toLocal();
+
+        final shouldBeNight = now.isAfter(sunset) || now.isBefore(sunrise);
+        if (shouldBeNight != _isNightMode) {
+          _isNightMode = shouldBeNight;
+          _mapController?.setMapStyle(_isNightMode ? MapStyles.nightStyle : null);
+          debugPrint('[MapStyle] Switched to ${_isNightMode ? "NIGHT" : "DAY"} mode based on sunset.');
+        }
+      }
+    } catch (e) {
+      // API hatası durumunda saat bazlı fallback
+      final hr = now.hour;
+      final fbNight = hr >= 19 || hr < 7;
+      if (fbNight != _isNightMode) {
+        _isNightMode = fbNight;
+        _mapController?.setMapStyle(_isNightMode ? MapStyles.nightStyle : null);
+      }
+    }
   }
 
   Future<void> _recalculateLocal(LatLng userLoc) async {
@@ -311,7 +372,11 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
         _isTtsEnabled = true;
         _selectedVoiceId = genderOrId;
         final v = CloudTtsService.getVoiceById(genderOrId);
-        if (v != null) _selectedVoiceGender = v['id'].toString().toLowerCase().contains('male') ? 'male' : 'female';
+        if (v != null) {
+          // Zuhal veya isminde male geçenler erkek kategorisi
+          final id = v['id'].toString().toLowerCase();
+          _selectedVoiceGender = (id.contains('male')) ? 'male' : 'female';
+        }
       }
     });
     if (genderOrId == 'off') _audioPlayer.stop();
@@ -365,7 +430,14 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
             initialCameraPosition: CameraPosition(target: LatLng(widget.targetLat, widget.targetLng), zoom: 15),
             polylines: _polylines, markers: _markers, mapType: _currentMapType,
             myLocationEnabled: !isNavigating, myLocationButtonEnabled: false, trafficEnabled: _isTrafficEnabled,
-            onMapCreated: (c) => _mapController = c,
+            onMapCreated: (c) {
+              _mapController = c;
+              // Otomatik Gece Modu (18:00 - 06:00)
+              final hour = DateTime.now().hour;
+              if (hour >= 18 || hour < 6) {
+                _mapController?.setMapStyle(MapStyles.nightStyle);
+              }
+            },
           ),
 
           // Üst Mod Sekmeleri
@@ -400,6 +472,26 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
             onMapTypeTap: () => setState(() => _currentMapType = _currentMapType == MapType.normal ? MapType.satellite : MapType.normal),
           ),
 
+          // Hız Göstergesi (Navigation sırasında)
+          if (isNavigating)
+            Positioned(
+              bottom: 110, left: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+                ),
+                child: Column(
+                  children: [
+                    Text(_currentSpeed.toStringAsFixed(0), style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w900, color: const Color(0xFF1A73E8))),
+                    Text('km/h', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ),
+
           // Alt Başlat / Bilgi Paneli
           Positioned(
             bottom: 0, left: 0, right: 0,
@@ -409,7 +501,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
               child: isNavigating ? _buildNavPanel() : _buildStartPanel(),
             ),
           ),
-          
+
           if (isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),

@@ -25,7 +25,7 @@ class NavigationFabGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
       right: 12,
-      bottom: isNavigating ? 190 : 280,
+      bottom: isNavigating ? 235 : 120,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

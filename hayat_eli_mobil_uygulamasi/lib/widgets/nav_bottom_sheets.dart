@@ -102,14 +102,14 @@ class NavigationWidgets {
                       onVoiceSelected(id);
                     }),
                     const SizedBox(height: 24),
-                    _voiceCategoryHeader('Kadın Sesleri (En Kaliteli)', '👩'),
+                    _voiceCategoryHeader('Kadın Sesleri', '👩'),
                     ...CloudTtsService.femaleVoices.map((v) => _voiceSubTile(v, localId, (id) {
                       final voice = CloudTtsService.getVoiceById(id);
                       set(() { localId = id; localGender = voice?['id'].toString().contains('male') == true ? 'male' : 'female'; });
                       onVoiceSelected(id);
                     })),
                     const SizedBox(height: 24),
-                    _voiceCategoryHeader('Erkek Sesleri (En Kaliteli)', '👨'),
+                    _voiceCategoryHeader('Erkek Sesleri', '👨'),
                     ...CloudTtsService.maleVoices.map((v) => _voiceSubTile(v, localId, (id) {
                       final voice = CloudTtsService.getVoiceById(id);
                       set(() { localId = id; localGender = voice?['id'].toString().contains('male') == true ? 'male' : 'female'; });
