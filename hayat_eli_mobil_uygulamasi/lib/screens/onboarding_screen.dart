@@ -36,6 +36,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Giriş yap sayfasındaki büyük resmi önceden hafızaya (RAM) yükler. 
+    // Böylece butona tıklandığında resim 1-2 saniye gecikmez, anında ekranda belirir.
+    precacheImage(const AssetImage('lib/assets/images/giris-yap-kapak.jpg'), context);
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();

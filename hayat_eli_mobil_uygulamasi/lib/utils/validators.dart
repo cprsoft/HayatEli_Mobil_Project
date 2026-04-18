@@ -60,11 +60,6 @@ class Validators {
     'icloud.com', 'me.com', 'mac.com',
     // Yandex
     'yandex.com', 'yandex.ru',
-    // Güvenli Alternatifler
-    'protonmail.com', 'proton.me',
-    'tutanota.com', 'tutamail.com',
-    'zoho.com',
-    'mail.com',
   ];
 
   /// Bilinen tek kullanımlık (disposable) ve geçici mail domain'leri

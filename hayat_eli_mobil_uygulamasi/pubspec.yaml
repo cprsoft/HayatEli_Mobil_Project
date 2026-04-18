@@ -53,7 +53,15 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   mime: ^2.0.0
+  shared_preferences: ^2.3.3
   http: ^1.6.0
+  image_cropper: ^12.1.1
+  google_maps_flutter: ^2.5.3
+  flutter_polyline_points: ^2.0.0
+  flutter_tts: ^4.2.0 # Sesli Asistan - Cloud TTS fallback için tutuldu
+  audioplayers: ^6.1.0 # Google Cloud TTS MP3 oynatmak için
+  wakelock_plus: ^1.2.10
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:
@@ -79,5 +87,9 @@ flutter:
 
   assets:
     - lib/assets/images/
+    - lib/assets/images/hastane.png
+    - lib/assets/images/eczane.png
+    - lib/assets/images/hastane_ikon.png
+    - lib/assets/images/eczane_ikon.jpg
 
  

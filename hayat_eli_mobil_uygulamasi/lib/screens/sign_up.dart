@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -94,14 +95,34 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1000, maxHeight: 1000, imageQuality: 85);
       if (pickedFile != null) {
-        final file = File(pickedFile.path);
-        final error = Validators.validateImageFile(file);
-        if (error != null) {
-          _showError(error);
-          return;
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: pickedFile.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Profil Fotoğrafını Kırp',
+              toolbarColor: _kDarkRed,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Profil Fotoğrafını Kırp',
+              aspectRatioLockEnabled: true,
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          final file = File(croppedFile.path);
+          final error = Validators.validateImageFile(file);
+          if (error != null) {
+            _showError(error);
+            return;
+          }
+          setState(() => _profileImage = file);
+          _showToast('Fotoğraf başarıyla kırpıldı ve seçildi.');
         }
-        setState(() => _profileImage = file);
-        _showToast('Fotoğraf başarıyla seçildi.');
       }
     } catch (e) {
       _showError('Fotoğraf seçilirken bir hata oluştu.');

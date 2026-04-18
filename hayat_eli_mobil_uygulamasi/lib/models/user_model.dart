@@ -5,23 +5,27 @@ class EmergencyContact {
   final String name;
   final String phone;
   final String relationship; // Eş, Anne, Baba, Kardeş, Diğer
+  final String? profilePictureUrl;
 
   EmergencyContact({
     required this.name,
     required this.phone,
     required this.relationship,
+    this.profilePictureUrl,
   });
 
   Map<String, dynamic> toMap() => {
         'name': name,
         'phone': phone,
         'relationship': relationship,
+        'profilePictureUrl': profilePictureUrl,
       };
 
   factory EmergencyContact.fromMap(Map<String, dynamic> map) => EmergencyContact(
         name: map['name'] ?? '',
         phone: map['phone'] ?? '',
         relationship: map['relationship'] ?? '',
+        profilePictureUrl: map['profilePictureUrl'],
       );
 }
 

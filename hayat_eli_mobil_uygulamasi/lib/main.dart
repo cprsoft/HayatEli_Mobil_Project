@@ -15,10 +15,15 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     ); 
 
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
-    );
+    if (!kIsWeb) {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.debug,
+        appleProvider: AppleProvider.debug,
+      );
+    } else {
+      // Ekranda Chrome seçeceksen kIsWeb kontrolü yapmadan AppCheck çalıştırırsan Firebase Web'de patlar.
+      // Web için eklenecekse buraya webProvider parametresi konmalıdır (Örn: ReCaptchaV3Provider).
+    }
   } catch (e) {
     debugPrint("Firebase başlatılamadı: $e");
   }

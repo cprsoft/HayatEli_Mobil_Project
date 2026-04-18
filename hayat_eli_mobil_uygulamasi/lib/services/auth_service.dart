@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
+import 'email_service.dart';
 
 // ============================================================
 // RIVERPOD PROVIDERS
@@ -21,6 +22,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(
     auth: FirebaseAuth.instance,
     firestore: FirebaseFirestore.instance,
+    emailService: ref.read(emailServiceProvider),
   );
 });
 
@@ -52,11 +54,16 @@ final userProfileProvider = StreamProvider<UserModel?>((ref) {
 class AuthService {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
+  final EmailService emailService;
 
   // Telefon doğrulama için geçici saklamalar
   String? _verificationId;
 
-  AuthService({required this.auth, required this.firestore});
+  AuthService({
+    required this.auth,
+    required this.firestore,
+    required this.emailService,
+  });
 
   // ────────────────────────────────────────
   // 1. E-POSTA İLE KAYIT
@@ -217,9 +224,6 @@ class AuthService {
     }
   }
 
-  // ────────────────────────────────────────
-  // 5. KULLANICI PROFİLİNİ FIRESTORE'A KAYDET
-  // ────────────────────────────────────────
   Future<String?> saveUserProfile(UserModel userModel) async {
     try {
       await firestore
@@ -229,6 +233,109 @@ class AuthService {
       return null;
     } catch (e) {
       return 'Profil kaydedilemedi: $e';
+    }
+  }
+
+  // ────────────────────────────────────────
+  // 5.1. BENZERSİZLİK KONTROLÜ (E-Posta / Telefon)
+  // ────────────────────────────────────────
+  Future<String?> checkEmailOrPhoneUsage({
+    required String? email,
+    required String? phone,
+    required String excludeUid,
+  }) async {
+    try {
+      if (email != null) {
+        final emailQuery = await firestore
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .get();
+        
+        for (var doc in emailQuery.docs) {
+          if (doc.id != excludeUid) return 'Lütfen kendi e-posta adresinizi girin.';
+        }
+      }
+
+      if (phone != null) {
+        final phoneQuery = await firestore
+            .collection('users')
+            .where('phone', isEqualTo: phone)
+            .get();
+        
+        for (var doc in phoneQuery.docs) {
+          if (doc.id != excludeUid) return 'Lütfen kendi telefon numaranızı girin.';
+        }
+      }
+      return null;
+    } catch (e) {
+      return 'Kullanım kontrolü sırasında hata: $e';
+    }
+  }
+
+  // ────────────────────────────────────────
+  // 5.2. AUTH BİLGİLERİNİ GÜNCELLE
+  // ────────────────────────────────────────
+  
+  /// Kritik işlemler öncesi şifre ile yeniden doğrulama yapar
+  Future<String?> reauthenticate(String password) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null || user.email == null) return 'Oturum bulunamadı.';
+      
+      final credential = EmailAuthProvider.credential(email: user.email!, password: password);
+      await user.reauthenticateWithCredential(credential);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password') return 'Girdiğiniz şifre hatalı.';
+      return _handleAuthError(e);
+    } catch (e) {
+      return 'Doğrulama hatası: $e';
+    }
+  }
+
+  /// Firebase Auth üzerindeki e-postayı anında günceller.
+  /// Not: Bu metot reauthenticate() yapıldıktan hemen sonra çağrılmalıdır.
+  Future<String?> updateAuthEmail(String newEmail) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null) return 'Oturum bulunamadı.';
+      
+      // updateEmail son sürümlerde kaldırılmış veya kısıtlanmış olabilir.
+      // verifyBeforeUpdateEmail hem daha güvenli hem de desteklenen yöntemdir.
+      await user.verifyBeforeUpdateEmail(newEmail);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return 'Güvenlik nedeniyle şifrenizi tekrar girmeniz gerekir.';
+      }
+      return _handleAuthError(e);
+    } catch (e) {
+      return 'Auth e-posta güncelleme hatası: $e';
+    }
+  }
+
+  /// Firebase Auth üzerindeki telefonu günceller (veya bağlar)
+  Future<String?> updateAuthPhone(PhoneAuthCredential credential) async {
+    try {
+      final user = auth.currentUser;
+      if (user == null) return 'Oturum bulunamadı.';
+      
+      // Kullanıcının hali hazırda bir telefonu varsa updatePhoneNumber, yoksa linkWithCredential kullanılır.
+      bool hasPhone = user.providerData.any((p) => p.providerId == 'phone');
+      
+      if (hasPhone) {
+        await user.updatePhoneNumber(credential);
+      } else {
+        await user.linkWithCredential(credential);
+      }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'requires-recent-login') {
+        return 'Güvenlik nedeniyle telefon güncellemek için yakın zamanda giriş yapmış olmanız gerekir.';
+      }
+      return _handleAuthError(e);
+    } catch (e) {
+      return 'Auth telefon güncelleme hatası: $e';
     }
   }
 
@@ -313,38 +420,28 @@ class AuthService {
   // 10. E-POSTA OTP (6 HANELİ KOD) SİSTEMİ
   // ────────────────────────────────────────
 
-  /// E-postaya 6 haneli doğrulama kodu gönderir (Firestore Extension tetikler)
+  /// E-posta OTP kodu gönderir (EmailJS kullanır)
   Future<String?> sendEmailOtp({required String email}) async {
     try {
       // 1. 6 Haneli rastgele kod üret
       final random = Random();
       final otpCode = (100000 + random.nextInt(900000)).toString();
-
+ 
       // 2. Doğrulama kaydını oluştur (5 dakika geçerli)
       final expiresAt = DateTime.now().add(const Duration(minutes: 5));
+      
       await firestore.collection('temp_verifications').doc(email).set({
         'code': otpCode,
         'expiresAt': expiresAt.toIso8601String(),
-        'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // 3. E-posta gönderimini tetikle (Trigger Email Extension koleksiyonu)
-      await firestore.collection('mail').add({
-        'to': email,
-        'message': {
-          'subject': 'Hayat Eli - Doğrulama Kodu',
-          'html': '''
-            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-              <h2 style="color: #E53935;">Hayat Eli Doğrulama</h2>
-              <p>Uygulamamıza kayıt olmak için doğrulama kodunuz:</p>
-              <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #333; margin: 20px 0;">
-                $otpCode
-              </div>
-              <p style="color: #666; font-size: 12px;">Bu kod 5 dakika süreyle geçerlidir. Eğer bu talebi siz yapmadıysanız lütfen bu e-postayı dikkate almayın.</p>
-            </div>
-          ''',
-        },
-      });
+      // 3. EmailJS üzerinden gönder
+      final success = await emailService.sendEmailOtp(
+        email: email,
+        otpCode: otpCode,
+      );
+
+      if (!success) return 'E-posta servisi şu an kullanılamıyor.';
 
       return null; // Başarılı
     } catch (e) {
