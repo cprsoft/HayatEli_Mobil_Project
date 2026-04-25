@@ -1,4 +1,4 @@
-# 🚑 HAYATELİ - Akıllı Acil Yardım ve Navigasyon Sistemi
+# HAYATELİ - Yapay Zeka Destekli Acil Durum ve İlk Yardım Mobil Uygulaması
 
 HayatEli, acil durumlarda kullanıcıların en yakın sağlık kuruluşuna en hızlı şekilde ulaşmasını sağlayan, sesli navigasyon ve anlık SOS bildirimleri ile donatılmış hibrit bir mobil uygulama projesidir.
 
@@ -50,7 +50,7 @@ Firebase konsolu üzerinden oluşturduğunuz projenin yapılandırma dosyaların
 flutter run
 ```
 
-## 🏗️ Proje Mimarisi
+## Proje Mimarisi
 
 Uygulama, **MVVM (Model-View-ViewModel)** ve servis odaklı (Service-Oriented) bir mimari prensibiyle geliştirilmiştir. 
 
