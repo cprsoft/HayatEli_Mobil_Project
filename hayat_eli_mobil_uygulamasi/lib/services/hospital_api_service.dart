@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class HospitalApiService {
   static const String _baseUrl = 'https://www.nosyapi.com/apiv2/service';
-  // Lütfen bu anahtarı environment variable (örneğin flutter_dotenv) ile korumaya alın.
+  // Lütfen bu anahtarı environmen
   static const String _apiKey = 'TOyOFiAfMAACNk4famWOWPTHVCkniCqIAEic0gHuR51k5FbMGhokjM1sbWXJ';
 
   /// Cihazın lokasyonuna (latitude ve longitude) göre en yakın hastaneleri getirir.

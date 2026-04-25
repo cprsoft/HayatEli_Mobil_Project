@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Google Cloud Text-to-Speech API servisi.
 /// Türkçe WaveNet ve Chirp3-HD sesleri kullanır.
 class CloudTtsService {
-  static const String _apiKey = 'AIzaSyA0S2aZt3PcdG5KVDRx_gCmGsw2cPx4wfs';
+  static final String _apiKey = dotenv.env['GOOGLE_MAPS_KEY'] ?? '';
   static const String _apiUrl =
       'https://texttospeech.googleapis.com/v1/text:synthesize';
 

@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class NobetciEczaneApi {
   static const String _baseUrl = 'https://www.nosyapi.com/apiv2/service';
-  static const String _apiKey = 'TOyOFiAfMAACNk4famWOWPTHVCkniCqIAEic0gHuR51k5FbMGhokjM1sbWXJ';
+  static final String _apiKey = dotenv.env['NOSY_API_KEY'] ?? '';
 
   /// Cihazın lokasyonuna (latitude ve longitude) göre en yakın 20 nöbetçi eczaneyi getirir.
   Future<List<dynamic>?> getPharmaciesByLocation({

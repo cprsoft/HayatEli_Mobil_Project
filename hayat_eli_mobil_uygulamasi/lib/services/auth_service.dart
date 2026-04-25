@@ -7,17 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import 'email_service.dart';
 
-// ============================================================
-// RIVERPOD PROVIDERS
-// Uygulamanın her yerinden Firebase oturum durumunu dinlemek için
-// ============================================================
-
-/// Firebase oturum akışı - null ise misafir, dolu ise kayıtlı kullanıcı
 final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
 });
 
-/// AuthService'e ulaşmak için global provider
 final authServiceProvider = Provider<AuthService>((ref) {
   return AuthService(
     auth: FirebaseAuth.instance,
@@ -26,7 +19,6 @@ final authServiceProvider = Provider<AuthService>((ref) {
   );
 });
 
-/// Giriş yapmış kullanıcının Firestore profilini dinleyen provider
 final userProfileProvider = StreamProvider<UserModel?>((ref) {
   final authState = ref.watch(authStateProvider);
   return authState.when(
@@ -46,17 +38,11 @@ final userProfileProvider = StreamProvider<UserModel?>((ref) {
   );
 });
 
-// ============================================================
-// AUTH SERVICE
-// Firebase ile konuşan tek servis dosyası
-// ============================================================
-
 class AuthService {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
   final EmailService emailService;
 
-  // Telefon doğrulama için geçici saklamalar
   String? _verificationId;
 
   AuthService({
@@ -65,9 +51,6 @@ class AuthService {
     required this.emailService,
   });
 
-  // ────────────────────────────────────────
-  // 1. E-POSTA İLE KAYIT
-  // ────────────────────────────────────────
   Future<String?> registerWithEmail({
     required String email,
     required String password,
@@ -75,17 +58,16 @@ class AuthService {
     try {
       final credential = await auth.createUserWithEmailAndPassword(
           email: email, password: password);
-      // Kayıt başarılı: E-posta doğrulama linki gönder
       await credential.user?.sendEmailVerification();
-      return null; // Başarılı
+      return null; 
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
-        // Hesap zaten varsa, sadece giriş yapıp maili tekrar tetiklemeyi deneyelim
+        
         try {
           final cred = await auth.signInWithEmailAndPassword(email: email, password: password);
           if (!cred.user!.emailVerified) {
             await cred.user?.sendEmailVerification();
-            return null; // Mevcut hesap ama doğrulanmamışsa maili yolladık
+            return null;
           }
           return 'Bu e-posta adresi zaten doğrulanmış ve kullanımda.';
         } catch (signInErr) {
@@ -97,10 +79,6 @@ class AuthService {
       return 'Beklenmeyen bir hata oluştu: $e';
     }
   }
-
-  // ────────────────────────────────────────
-  // 2. E-POSTA İLE GİRİŞ
-  // ────────────────────────────────────────
   Future<String?> signInWithEmail({
     required String email,
     required String password,
@@ -108,10 +86,7 @@ class AuthService {
     try {
       final credential = await auth.signInWithEmailAndPassword(
           email: email, password: password);
-
-      // E-posta doğrulanması kontrolu
       if (credential.user != null && !credential.user!.emailVerified) {
-        // Doğrulanmamış kullanıcıyı içeri sokma, çıkış yaptır
         await auth.signOut();
         return 'E-posta adresiniz henüz doğrulanmamış.\n'
             'Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.';
@@ -124,10 +99,6 @@ class AuthService {
       return 'Beklenmeyen bir hata oluştu: \$e';
     }
   }
-
-  // ────────────────────────────────────────
-  // 3. TELEFON İLE OTP GÖNDERME
-  // ────────────────────────────────────────
   Future<String?> sendPhoneOtp({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
@@ -135,9 +106,8 @@ class AuthService {
   }) async {
     try {
       await auth.verifyPhoneNumber(
-        phoneNumber: phoneNumber, // Örn: "+905551234567"
+        phoneNumber: phoneNumber, 
         verificationCompleted: (PhoneAuthCredential credential) async {
-          // Android'de otomatik doğrulama
           await auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
@@ -157,10 +127,6 @@ class AuthService {
       return 'SMS gönderilemedi: $e';
     }
   }
-
-  // ────────────────────────────────────────
-  // 4. TELEFON OTP DOĞRULAMA (VE BAĞLAMA)
-  // ────────────────────────────────────────
   Future<String?> verifyPhoneOtp({
     required String smsCode,
     String? verificationId,
@@ -176,16 +142,13 @@ class AuthService {
       );
 
       if (linkInsteadOfSignIn && auth.currentUser != null) {
-        // Zaten bir oturum varsa (örn e-posta), telefonu bu oturuma BAĞLA
         await auth.currentUser!.linkWithCredential(credential);
       } else {
-        // Oturum yoksa veya bağlama istenmiyorsa direkt giriş yap
         await auth.signInWithCredential(credential);
       }
       return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
-        // Zaten bağlıysa amaç hasıl olmuştur, hata döndürme (başarı say)
         return null;
       }
       if (e.code == 'credential-already-in-use') {
@@ -197,7 +160,6 @@ class AuthService {
     }
   }
 
-  /// Mevcut oturuma e-posta ve şifreyi bağlar (Eğer telefonla girilmişse)
   Future<String?> linkEmailWithExistingAccount({
     required String email,
     required String password,
@@ -207,12 +169,10 @@ class AuthService {
       
       final credential = EmailAuthProvider.credential(email: email, password: password);
       await auth.currentUser!.linkWithCredential(credential);
-      // Bağlandıktan sonra onay maili gönder
       await auth.currentUser!.sendEmailVerification();
       return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
-        // Zaten bağlıysa hata döndürme (başarı say)
         return null; 
       }
       if (e.code == 'credential-already-in-use') {
@@ -236,9 +196,6 @@ class AuthService {
     }
   }
 
-  // ────────────────────────────────────────
-  // 5.1. BENZERSİZLİK KONTROLÜ (E-Posta / Telefon)
-  // ────────────────────────────────────────
   Future<String?> checkEmailOrPhoneUsage({
     required String? email,
     required String? phone,
@@ -271,12 +228,6 @@ class AuthService {
       return 'Kullanım kontrolü sırasında hata: $e';
     }
   }
-
-  // ────────────────────────────────────────
-  // 5.2. AUTH BİLGİLERİNİ GÜNCELLE
-  // ────────────────────────────────────────
-  
-  /// Kritik işlemler öncesi şifre ile yeniden doğrulama yapar
   Future<String?> reauthenticate(String password) async {
     try {
       final user = auth.currentUser;
@@ -292,16 +243,10 @@ class AuthService {
       return 'Doğrulama hatası: $e';
     }
   }
-
-  /// Firebase Auth üzerindeki e-postayı anında günceller.
-  /// Not: Bu metot reauthenticate() yapıldıktan hemen sonra çağrılmalıdır.
   Future<String?> updateAuthEmail(String newEmail) async {
     try {
       final user = auth.currentUser;
       if (user == null) return 'Oturum bulunamadı.';
-      
-      // updateEmail son sürümlerde kaldırılmış veya kısıtlanmış olabilir.
-      // verifyBeforeUpdateEmail hem daha güvenli hem de desteklenen yöntemdir.
       await user.verifyBeforeUpdateEmail(newEmail);
       return null;
     } on FirebaseAuthException catch (e) {
@@ -313,14 +258,10 @@ class AuthService {
       return 'Auth e-posta güncelleme hatası: $e';
     }
   }
-
-  /// Firebase Auth üzerindeki telefonu günceller (veya bağlar)
   Future<String?> updateAuthPhone(PhoneAuthCredential credential) async {
     try {
       final user = auth.currentUser;
       if (user == null) return 'Oturum bulunamadı.';
-      
-      // Kullanıcının hali hazırda bir telefonu varsa updatePhoneNumber, yoksa linkWithCredential kullanılır.
       bool hasPhone = user.providerData.any((p) => p.providerId == 'phone');
       
       if (hasPhone) {
@@ -339,9 +280,6 @@ class AuthService {
     }
   }
 
-  // ────────────────────────────────────────
-  // 6. DOĞRULAMA MALİ TEKRAR GÖNDER
-  // ────────────────────────────────────────
   Future<String?> resendVerificationEmail() async {
     try {
       await auth.currentUser?.sendEmailVerification();
@@ -351,9 +289,6 @@ class AuthService {
     }
   }
 
-  // ────────────────────────────────────────
-  // 7. ŞİFRE SIFIRLAMA E-POSTASI
-  // ────────────────────────────────────────
   Future<String?> sendPasswordReset({required String email}) async {
     try {
       await auth.sendPasswordResetEmail(email: email);
@@ -365,17 +300,10 @@ class AuthService {
     }
   }
 
-  // ────────────────────────────────────────
-  // 7. ÇIKIŞ YAP
-  // ────────────────────────────────────────
   Future<void> signOut() async {
     await auth.signOut();
   }
 
-  // ────────────────────────────────────────
-  // 8. ŞİFRE DOĞRULAMA (Client-Side)
-  // En az 8 karakter, en az 1 özel karakter
-  // ────────────────────────────────────────
   static String? validatePassword(String password) {
     if (password.length < 8) {
       return 'Şifre en az 8 karakter olmalıdır.';
@@ -383,12 +311,9 @@ class AuthService {
     if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(password)) {
       return 'Şifre en az 1 özel karakter içermelidir (!@#\$% vb.)';
     }
-    return null; // Geçerli
+    return null; 
   }
 
-  // ────────────────────────────────────────
-  // HATA MESAJLARI (Türkçe)
-  // ────────────────────────────────────────
   String? _handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
@@ -414,20 +339,10 @@ class AuthService {
     }
   }
 
-  // Anlık kullanıcı
-
-  // ────────────────────────────────────────
-  // 10. E-POSTA OTP (6 HANELİ KOD) SİSTEMİ
-  // ────────────────────────────────────────
-
-  /// E-posta OTP kodu gönderir (EmailJS kullanır)
   Future<String?> sendEmailOtp({required String email}) async {
     try {
-      // 1. 6 Haneli rastgele kod üret
       final random = Random();
       final otpCode = (100000 + random.nextInt(900000)).toString();
- 
-      // 2. Doğrulama kaydını oluştur (5 dakika geçerli)
       final expiresAt = DateTime.now().add(const Duration(minutes: 5));
       
       await firestore.collection('temp_verifications').doc(email).set({
@@ -435,7 +350,6 @@ class AuthService {
         'expiresAt': expiresAt.toIso8601String(),
       });
 
-      // 3. EmailJS üzerinden gönder
       final success = await emailService.sendEmailOtp(
         email: email,
         otpCode: otpCode,
@@ -443,13 +357,12 @@ class AuthService {
 
       if (!success) return 'E-posta servisi şu an kullanılamıyor.';
 
-      return null; // Başarılı
+      return null; 
     } catch (e) {
       return 'E-posta kodu gönderilemedi: $e';
     }
   }
 
-  /// Kullanıcının girdiği 6 haneli kodu kontrol eder
   Future<bool> verifyEmailOtp({required String email, required String code}) async {
     try {
       final doc = await firestore.collection('temp_verifications').doc(email).get();
@@ -460,13 +373,11 @@ class AuthService {
       final expiresAt = DateTime.parse(data['expiresAt'] as String);
 
       if (DateTime.now().isAfter(expiresAt)) {
-        // Süresi dolmuş
         await firestore.collection('temp_verifications').doc(email).delete();
         return false;
       }
 
       if (correctCode == code) {
-        // Başarılı, kaydı silebiliriz (veya kalsın, biz state'i güncelleriz)
         await firestore.collection('temp_verifications').doc(email).delete();
         return true;
       }
@@ -478,24 +389,15 @@ class AuthService {
   }
 
   User? get currentUser => auth.currentUser;
-
-  /// Mevcut oturumun JWT (ID Token) değerini getirir
   Future<String?> getIdToken() async {
     return await auth.currentUser?.getIdToken();
   }
 
-  // ────────────────────────────────────────
-  // PROFİL FOTOĞRAFI UPLOAD (Firebase Storage)
-  // ────────────────────────────────────────
-
-  /// Fotoğrafı Storage'a yükler, indirme URL'ini döner.
-  /// Hata durumunda null döner (kayıt yine de devam eder).
   Future<String?> uploadProfileImage({
     required String uid,
     required File imageFile,
   }) async {
     try {
-      // Güvenli yol: sadece uid ile isimlendirilen klasöre yaz
       final ref = FirebaseStorage.instance
           .ref()
           .child('users')
@@ -509,7 +411,6 @@ class AuthService {
 
       return await uploadTask.ref.getDownloadURL();
     } catch (e) {
-      // Upload başarısız olursa kayıt iptal etme, sadece null dön
       return null;
     }
   }

@@ -31,7 +31,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   final _formKeys = List.generate(4, (_) => GlobalKey<FormState>());
 
-  // Step 1
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _tcNoController = TextEditingController();
@@ -40,20 +39,18 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   DateTime? _birthDate;
   String _gender = 'Erkek';
   final _emailController = TextEditingController();
-  final _emailOtpController = TextEditingController(); // Yeni controller
+  final _emailOtpController = TextEditingController(); 
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   final _phoneController = TextEditingController();
   final _phoneOtpController = TextEditingController();
   String _selectedDialCode = '+90';
 
-  // Step 2
   String? _bloodType;
   final _chronicController = TextEditingController();
   final _allergiesController = TextEditingController();
   final _medicationsController = TextEditingController();
 
-  // Step 3
   final _ecNameController = TextEditingController();
   final _ecPhoneController = TextEditingController();
   String? _ecRelationship;
@@ -181,15 +178,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Future<void> _register() async {
     final authState = ref.read(signUpControllerProvider);
     final authNotifier = ref.read(signUpControllerProvider.notifier);
-    
-    // Güvenlik: Adım 1 ve Adım 2 doğrulama kontrolleri
     if (!authState.isEmailVerified || !authState.isPhoneVerified) {
       _showError('Güvenlik ihlali: E-posta veya telefon numarası doğrulanmamış işlemler devam edemez.');
       return;
     }
 
     final newUser = UserModel(
-      uid: '', // Firebase Auth tarafından eklenecek
+      uid: '', 
       firstName: _firstNameController.text.trim(),
       lastName: _lastNameController.text.trim(),
       email: _emailController.text.trim(),
@@ -328,7 +323,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       phoneOtpExpired: authState.isPhoneOtpExpired,
                       phoneSecondsLeft: authState.phoneSecondsLeft,
                       onSendVerificationLink: () {
-                        // Basit validation
                         final email = _emailController.text.trim();
                         final pass = _passwordController.text;
                         final passConfirm = _passwordConfirmController.text;
@@ -387,8 +381,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   ],
                 ),
               ),
-
-              // ── Bottom Nav ──
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
                 child: Column(

@@ -36,7 +36,7 @@ class MainScaffold extends ConsumerWidget {
             ],
           ),
           content: const Text(
-            "Konum Takibi ve Profil özelliklerini kullanabilmek için lütfen ücretsiz kayıt olun veya giriş yapın.",
+            "Acil Noktalar ve Profilim özelliklerini kullanabilmek için lütfen ücretsiz kayıt olun veya giriş yapın.",
           ),
           actions: [
             TextButton(
@@ -66,7 +66,6 @@ class MainScaffold extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(bottomNavIndexProvider);
-    // Gerçek Firebase auth stream: null ise misafir, dolu ise kayıtlı kullanıcı
     final authState = ref.watch(authStateProvider);
     final isGuest = authState.when(
       data: (user) => user == null,
@@ -107,13 +106,13 @@ class MainScaffold extends ConsumerWidget {
             icon: Icon(Icons.psychology_alt), 
             label: 'İLK YARDIM AI',
           ),
-          // 3. SEKMEYİ KONTROL EDİYORUZ: Misafirse Kilit İkonu Göster
+        
           BottomNavigationBarItem(
             icon: Icon(isGuest ? Icons.lock_outline : Icons.map_outlined),
             activeIcon: Icon(isGuest ? Icons.lock : Icons.map),
             label: 'Acil Noktalar',
           ),
-          // 4. SEKMEYİ KONTROL EDİYORUZ: Misafirse Kilit İkonu Göster
+          
           BottomNavigationBarItem(
             icon: Icon(isGuest ? Icons.lock_outline : Icons.person_outline),
             activeIcon: Icon(isGuest ? Icons.lock : Icons.person),

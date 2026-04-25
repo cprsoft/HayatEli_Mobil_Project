@@ -53,7 +53,6 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildProfileContent(BuildContext context, UserModel profile) {
     return Column(
       children: [
-        // ─── SABİT KIRMIZI HEADER (kaydırmaz) ───
         Container(
           width: double.infinity,
           decoration: const BoxDecoration(
@@ -156,7 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                 const SizedBox(height: 40),
                 Center(
                   child: Text(
-                    'HAYATELİ GÜVENLİK SİSTEMİ',
+                    'HAYATELİ tüm hakları saklıdır.',
                     style: GoogleFonts.outfit(color: Colors.grey.shade400, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.5),
                   ),
                 ),

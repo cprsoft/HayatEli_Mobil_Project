@@ -45,3 +45,10 @@ app.*.map.json
 /android/app/release
 build/
 /j/
+
+# Security, Keys and Credentials
+.env
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+*.keystore
+*.jks

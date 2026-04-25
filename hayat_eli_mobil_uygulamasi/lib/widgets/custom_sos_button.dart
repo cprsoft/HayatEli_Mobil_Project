@@ -29,23 +29,19 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
-
   @override
   void dispose() {
     _pulseController.dispose();
     super.dispose();
   }
-
-  // SOS Butonuna basıldığında çıkacak güvenlik ve karar diyaloğu
   void _showSosConfirmationDialog() {
-    // Animasyonu durdur
     _pulseController.stop();
 
     showModalBottomSheet(
       context: context,
       isDismissible: false,
       enableDrag: false,
-      isScrollControlled: true, // İçeriğin tam görünmesini sağlar
+      isScrollControlled: true, 
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -69,8 +65,6 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
-                
-                // Seçenek 1: Kendim İçin (SMS + Arama)
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
@@ -78,14 +72,13 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
-                    Navigator.pop(context); // Önce Diyaloğu Kapat
-                    _startSosCountdown(isForSelf: true); // Sonra Geri Sayımı Başlat
+                    Navigator.pop(context); 
+                    _startSosCountdown(isForSelf: true); 
                   },
                   child: const Text("KENDİM İÇİN (SMS Gönder ve Ara)", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 12),
-                
-                // Seçenek 2: Başkası İçin (Sadece Arama)
+
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 54),
@@ -99,17 +92,14 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
                   child: const Text("BAŞKASI İÇİN (Sadece Ara)", style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 16),
-                
-                // İptal Butonu (Suistimal Kalkanı)
+
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context); // Diyaloğu kapat, hiçbir şey yapma
-                    // Animasyonu tekrar başlat (Opsiyonel: Kullanıcı iptal ederse nabız dönsün mü?)
+                    Navigator.pop(context); 
                     _pulseController.repeat(reverse: true);
                   },
                   child: const Text("İptal Et (Yanlışlıkla Bastım)", style: TextStyle(color: Colors.grey)),
                 ),
-                // Safe Area için alt boşluk (Gerekirse)
                 SizedBox(height: MediaQuery.of(context).padding.bottom),
               ],
             ),
@@ -118,8 +108,6 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
       },
     );
   }
-
-  // 5 Saniyelik İptal Süresi (Suistimal Önleme)
   void _startSosCountdown({required bool isForSelf}) {
     int countdown = 5;
     bool isCancelled = false;
@@ -143,7 +131,7 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
               } else {
                 timer.cancel();
                 if (Navigator.canPop(context)) {
-                  Navigator.pop(context); // Geri sayım penceresini kapat
+                  Navigator.pop(context);
                 }
                 _executeSosAction(context: context, isForSelf: isForSelf);
               }
@@ -185,7 +173,7 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
                     ),
                     onPressed: () {
                       isCancelled = true;
-                      Navigator.pop(context); // İptal edildi, pencereyi kapat
+                      Navigator.pop(context); 
                       _pulseController.repeat(reverse: true);
                     },
                     child: const Text("İPTAL ET (Yalnızca Test)"),
@@ -199,16 +187,15 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
     );
   }
 
-  // Gerçek SOS aksiyonunu başlatan fonksiyon
+  
   Future<void> _executeSosAction({required BuildContext context, required bool isForSelf}) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: '112');
     
-    // Konum bilgisini Riverpod'dan al
+   
     final locationState = ref.read(locationProvider);
     String locationText = locationState.address ?? "Adres alınamadı";
     
     if (isForSelf) {
-      // Kendisi için SMS atacak
       // TODO: Firebase Entegrasyonu ile ileride Acil Kişi numaraları veritabanından çekilecek
       // Şimdilik test amaçlı örnek bir numara atıyoruz.
       String emergencyPhone = "05555555555"; 
@@ -239,7 +226,6 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
       }
     } 
 
-    // Telefonun arama ekranını (Dialer) SADECE Başkası İçin (isForSelf == false) seçildiğinde aç
     if (!isForSelf) {
       try {
         if (await canLaunchUrl(phoneUri)) {

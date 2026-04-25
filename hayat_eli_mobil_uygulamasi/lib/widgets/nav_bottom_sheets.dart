@@ -274,11 +274,9 @@ class NavigationWidgets {
     );
   }
 
-  /// ─── Navigasyon Alt Bilgi Paneli (Sabit) ───
+  /// ─── Navigasyon Alt Bilgi Paneli (Sabit - Modern Kart) ───
   static Widget buildNavigationInfoPanel({
     required BuildContext context,
-    required String currentInstruction,
-    required String currentStepDistance,
     required String remainingDistance,
     required String duration,
     required bool isRecalculating,
@@ -287,7 +285,6 @@ class NavigationWidgets {
     required VoidCallback onShowAlternativeRoutes,
   }) {
     final now = DateTime.now();
-    // Süreyi parse et (örn: "5 dk")
     int minutes = 0;
     try {
       minutes = int.parse(duration.split(' ')[0]);
@@ -295,80 +292,101 @@ class NavigationWidgets {
     final arrivalTime = DateFormat('HH:mm').format(now.add(Duration(minutes: minutes)));
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -5))],
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 25, offset: const Offset(0, 10))
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Rota Hesaplama Uyarısı
           if (isRecalculating)
             Container(
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(14)),
               child: Row(
                 children: [
-                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange)),
+                  const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange)),
                   const SizedBox(width: 12),
-                  Text('Rota yeniden hesaplanıyor...', style: GoogleFonts.outfit(color: Colors.orange.shade900, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text('Rota güncelleniyor...', style: GoogleFonts.outfit(color: Colors.orange.shade900, fontSize: 13, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
 
-          // Talimat Bölümü
           Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFF1A73E8).withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
-                child: const Icon(Icons.navigation_rounded, color: Color(0xFF1A73E8), size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(currentInstruction, style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.black87), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    if (currentStepDistance.isNotEmpty)
-                      Text(currentStepDistance, style: GoogleFonts.outfit(fontSize: 14, color: const Color(0xFF1A73E8), fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: onShowSteps,
-                icon: const Icon(Icons.format_list_bulleted_rounded, color: Colors.black54),
-              ),
-            ],
-          ),
-          const Divider(height: 32),
-
-          // Alt Bilgi Bölümü (Varış Süresi, Mesafe, Süre)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(duration, style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.green.shade700)),
-                    Text('$remainingDistance · Varış: $arrivalTime', style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+                    Text(duration, style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.w900, color: const Color(0xFF1E8E3E))),
+                    const SizedBox(height: 2),
+                    Text('$remainingDistance · Varış $arrivalTime', style: GoogleFonts.outfit(fontSize: 15, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
               Row(
                 children: [
                   _circleBtn(Icons.alt_route_rounded, Colors.black87, onShowAlternativeRoutes, tooltip: 'Rotalar'),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   _circleBtn(Icons.format_list_bulleted_rounded, Colors.black87, onShowSteps, tooltip: 'Adımlar'),
-                  const SizedBox(width: 10),
-                  _circleBtn(Icons.close_rounded, Colors.white, onStopNavigation, bgColor: Colors.red.shade600, tooltip: 'Bitir'),
+                  const SizedBox(width: 12),
+                  _circleBtn(Icons.close_rounded, Colors.white, onStopNavigation, bgColor: const Color(0xFFD93025), tooltip: 'Bitir'),
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ─── Üst Navigasyon Bilgi Barı (Mavi - Görsel 2) ───
+  static Widget buildTopNavigationHeader({
+    required String instruction,
+    required String distance,
+    required IconData maneuverIcon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 50, 16, 0),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A73E8), // Google Blue
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 5))
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(maneuverIcon, color: Colors.white, size: 42),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  instruction,
+                  style: GoogleFonts.outfit(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (distance.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      distance,
+                      style: GoogleFonts.outfit(fontSize: 15, color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

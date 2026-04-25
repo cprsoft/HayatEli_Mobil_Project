@@ -39,7 +39,7 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
       curve: Curves.easeIn,
     );
 
-    // Animasyonları sırayla başlat
+   
     _scaleController.forward().then((_) => _fadeController.forward());
   }
 
@@ -68,7 +68,7 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Animasyonlu Tebrik İkonu
+                
                   ScaleTransition(
                     scale: _scaleAnimation,
                     child: Container(

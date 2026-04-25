@@ -2,24 +2,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// EmailJS servisine erişim için provider
 final emailServiceProvider = Provider((ref) => EmailService());
 
 class EmailService {
-  // ─── EMAILJS AYARLARI ───
-  // Kral, bu bilgileri EmailJS panelinden aldığında buraya yapıştır:
   static const String _serviceId = 'service_ndydpwk';
   static const String _templateId = 'template_gfgzmod';
   static const String _publicKey = 'SoBBPoQB1VVY6DpvQ';
 
-  /// Giriş yapmak isteyen kullanıcıya 6 haneli OTP kodu gönderir.
   Future<bool> sendLoginOtp({
     required String email,
     required String otpCode,
     required String time,
   }) async {
     final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
-
     try {
       final response = await http.post(
         url,
@@ -41,7 +36,7 @@ class EmailService {
       );
 
       if (response.statusCode == 200) {
-        return true; // Başarılı
+        return true; 
       } else {
         print('EmailJS Hatası: ${response.body}');
         return false;
@@ -51,8 +46,6 @@ class EmailService {
       return false;
     }
   }
-
-  /// Genel e-posta doğrulama kodu (OTP) gönderir.
   Future<bool> sendEmailOtp({
     required String email,
     required String otpCode,

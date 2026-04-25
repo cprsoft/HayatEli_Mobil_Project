@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RouteService {
-  static const String _apiKey = 'AIzaSyA0S2aZt3PcdG5KVDRx_gCmGsw2cPx4wfs';
+  static final String _apiKey = dotenv.env['GOOGLE_MAPS_KEY'] ?? '';
 
   Future<Map<String, dynamic>?> getRouteDirections(
       LatLng origin, LatLng destination, {String mode = 'driving'}) async {

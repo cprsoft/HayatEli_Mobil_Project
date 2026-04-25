@@ -62,6 +62,7 @@ dependencies:
   audioplayers: ^6.1.0 # Google Cloud TTS MP3 oynatmak için
   wakelock_plus: ^1.2.10
   speech_to_text: ^7.0.0
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -91,5 +92,6 @@ flutter:
     - lib/assets/images/eczane.png
     - lib/assets/images/hastane_ikon.png
     - lib/assets/images/eczane_ikon.jpg
+    - .env
 
  

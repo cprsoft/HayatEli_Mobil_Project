@@ -21,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // 2 saniyelik pürüzsüz giriş efekti
+      duration: const Duration(seconds: 2), 
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -59,9 +59,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFE53935), // Açık kırmızı
-              Color(0xFFB71C1C), // Koyu kan kırmızısı
-              Color(0xFF880E4F), // Derin bordo
+              Color(0xFFE53935), 
+              Color(0xFFB71C1C),
+              Color(0xFF880E4F), 
             ],
           ),
         ),
@@ -180,7 +180,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 32),
                         
-                        // Kayıt Olmadan Devam Et Seçeneği (Ana hedefe gidiş)
+                       
                         TextButton(
                           onPressed: () {
                             Navigator.pushReplacement(

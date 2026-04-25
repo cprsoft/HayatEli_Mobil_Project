@@ -12,7 +12,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Oturum durumunu dinle
     final authState = ref.watch(authStateProvider);
     final userProfileAsync = ref.watch(userProfileProvider);
 
@@ -29,17 +28,16 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       
-      // 1. ÜST KISIM (APPBAR BÖLGESİ)
       appBar: AppBar(
         backgroundColor: Colors.grey.shade100,
         surfaceTintColor: Colors.transparent,
         elevation: 1,
         toolbarHeight: 70,
         centerTitle: true,
-        // Sol Üst: Kayıt Teşviki (Eğer giriş yapılmamışsa göster)
+      
         leadingWidth: 120,
         leading: isLoggedIn 
-          ? const SizedBox() // Giriş yapılmışsa boşluk
+          ? const SizedBox() 
           : Padding(
             padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
             child: InkWell(
@@ -127,7 +125,7 @@ class HomeScreen extends ConsumerWidget {
                       image: const AssetImage('lib/assets/images/giris-yap-kapak.jpg'),
                       fit: BoxFit.cover,
                       colorFilter: ColorFilter.mode(
-                        Colors.white.withValues(alpha: 0.94), 
+                        Colors.white.withValues(alpha: 0.90), 
                         BlendMode.lighten,
                       ),
                     ),

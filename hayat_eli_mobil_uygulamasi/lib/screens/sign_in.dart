@@ -20,7 +20,6 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Form Controllers
   final _emailFormKey = GlobalKey<FormState>();
   final _phoneFormKey = GlobalKey<FormState>();
 
@@ -31,9 +30,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
 
-  // Local UI states (not business logic)
   bool _obscurePassword = true;
-  String _selectedDialCode = '+90';
+  String _selectedDialCode = +90';'
 
   static const _kDarkRed = Color(0xFFB71C1C);
 
@@ -66,8 +64,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
       (route) => false,
     );
   }
-
-  // --- Actions ---
 
   Future<void> _handleEmailAction() async {
     final controller = ref.read(signInControllerProvider.notifier);
@@ -103,11 +99,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    // Watch entire auth state from controller
     final authState = ref.watch(signInControllerProvider);
     final authController = ref.read(signInControllerProvider.notifier);
 
-    // Auto-fill redirect listener
     ref.listen(authStateProvider, (previous, next) {
       if (next.value != null && mounted) {
         if (_tabController.index == 0) {
@@ -127,7 +121,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
           image: DecorationImage(
             image: AssetImage('lib/assets/images/giris-yap-kapak.jpg'),
             fit: BoxFit.cover,
-            alignment: Alignment.topCenter, // Fotoğraf klavye açılınca veya ekran ölçüsü değişince zıplamasın/kaymasın
+            alignment: Alignment.topCenter, 
           ),
         ),
         child: SafeArea(
@@ -206,8 +200,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                                       },
                                     ),
                             ),
-
-                            // Error Message
                             if (authState.errorMessage != null) ...[
                               Container(
                                 padding: const EdgeInsets.all(12),
@@ -227,9 +219,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                               ),
                             ],
 
-                            const SizedBox(height: 24), // Buton ile form alanları arasındaki mesafe (eskiden yapışıktı)
-
-                            // Submit Button
+                            const SizedBox(height: 24), 
                             SizedBox(
                               width: double.infinity,
                               height: 54,
@@ -266,14 +256,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                             ),
                             const SizedBox(height: 20),
 
-                            // Kayıt Ol Linki
+                            
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text('Hesabın yok mu? ',
                                     style: GoogleFonts.outfit(color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
                                 GestureDetector(
-                                  behavior: HitTestBehavior.opaque, // Hit target için tıklanabilir alanı genişletiyor
+                                  behavior: HitTestBehavior.opaque,
                                   onTap: () => Navigator.pushReplacement(
                                       context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
                                   child: Padding(

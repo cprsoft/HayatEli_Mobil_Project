@@ -419,6 +419,16 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
     );
   }
 
+  IconData _getManeuverIcon(String instr) {
+    final text = instr.toLowerCase();
+    if (text.contains('sol')) return Icons.turn_left_rounded;
+    if (text.contains('sağ')) return Icons.turn_right_rounded;
+    if (text.contains('döner') || text.contains('kavşak')) return Icons.roundabout_right_rounded;
+    if (text.contains('düz') || text.contains('ilerle')) return Icons.straight_rounded;
+    if (text.contains('ger')) return Icons.u_turn_left_rounded;
+    return Icons.navigation_rounded;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -439,6 +449,13 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
               }
             },
           ),
+
+          if (isNavigating && currentInstruction.isNotEmpty)
+            NavigationWidgets.buildTopNavigationHeader(
+              instruction: currentInstruction,
+              distance: currentStepDistance,
+              maneuverIcon: _getManeuverIcon(currentInstruction),
+            ),
 
           // Üst Mod Sekmeleri
           if (!isNavigating)
@@ -492,13 +509,13 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
               ),
             ),
 
-          // Alt Başlat / Bilgi Paneli
+          // Alt Başlat / Bilgi Paneli (Floating Card yapısı eklendi)
           Positioned(
             bottom: 0, left: 0, right: 0,
-            child: Container(
+            child: isNavigating ? _buildNavPanel() : Container(
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(32)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20)]),
-              child: isNavigating ? _buildNavPanel() : _buildStartPanel(),
+              child: _buildStartPanel(),
             ),
           ),
 
@@ -546,16 +563,20 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
   Widget _buildNavPanel() {
     return NavigationWidgets.buildNavigationInfoPanel(
       context: context,
-      currentInstruction: currentInstruction,
-      currentStepDistance: currentStepDistance,
       remainingDistance: remainingDistanceText,
       duration: durationText,
       isRecalculating: isRecalculating,
       onStopNavigation: () => stopNavigationLogic(_audioPlayer, () => setState(() {})),
-      onShowSteps: () => NavigationWidgets.showStepsBottomSheet(context: context, steps: steps, currentStepIndex: currentStepIndex, isNavigating: isNavigating),
-      onShowAlternativeRoutes: () => NavigationWidgets.showAlternativeRoutes(context: context, routes: _alternativeRoutes, selectedIndex: _selectedRouteIndex, onRouteSelected: (i) {
-        setState(() { _selectedRouteIndex = i; applyRouteData(_alternativeRoutes[i], i, _alternativeRoutes, _polylines, _travelMode); });
-      }),
+      onShowSteps: () => NavigationWidgets.showStepsBottomSheet(
+        context: context, steps: steps, currentStepIndex: currentStepIndex, isNavigating: isNavigating
+      ),
+      onShowAlternativeRoutes: () => NavigationWidgets.showAlternativeRoutes(
+        context: context, routes: _alternativeRoutes, selectedIndex: _selectedRouteIndex,
+        onRouteSelected: (i) => setState(() { 
+          _selectedRouteIndex = i; 
+          applyRouteData(_alternativeRoutes[i], i, _alternativeRoutes, _polylines, _travelMode);
+        })
+      ),
     );
   }
 }
