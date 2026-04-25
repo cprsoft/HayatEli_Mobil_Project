@@ -94,7 +94,6 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 12.0),
             child: GestureDetector(
               onTap: () {
-                // Notifier üzerinden 3. sekmeye (Profil) geçişi tetikleyebiliriz
                 ref.read(bottomNavIndexProvider.notifier).setIndex(3);
               },
               child: CircleAvatar(
@@ -134,12 +133,10 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       const SizedBox(height: 20),
                       
-                      // 2. REHBER KARTI
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: InkWell(
                           onTap: () {
-                            // TODO: İlk yardım eğitim rehberi sayfasına yönlendirilecek
                           },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
@@ -193,7 +190,6 @@ class HomeScreen extends ConsumerWidget {
                       
                       const Spacer(),
                       
-                      // 3. SOS BUTONU
                       const CustomSosButton(),
                       
                       const SizedBox(height: 20),
@@ -210,7 +206,6 @@ class HomeScreen extends ConsumerWidget {
                       
                       const Spacer(),
                       
-                      // 4. ALT KISIM (CANLI KONUM BÖLGESİ)
                       const Padding(
                         padding: EdgeInsets.only(bottom: 32.0, left: 24.0, right: 24.0),
                         child: LiveLocationCard(),

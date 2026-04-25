@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Navigasyon ekranındaki sağ taraf buton grubu (FAB).
 class NavigationFabGroup extends StatelessWidget {
   final bool isNavigating;
   final bool isTrafficEnabled;
@@ -72,7 +71,6 @@ class NavigationFabGroup extends StatelessWidget {
               Icons.gps_fixed_rounded,
               Colors.purple,
               () {
-                // Koordinat bulma tetiklemesi (Callback eklenmeli)
                 onLocationTap(); 
               },
               tooltip: 'Koordinat Bul',

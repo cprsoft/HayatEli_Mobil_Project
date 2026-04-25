@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class HospitalApiService {
   static const String _baseUrl = 'https://www.nosyapi.com/apiv2/service';
-  // Lütfen bu anahtarı environmen
-  static const String _apiKey = 'TOyOFiAfMAACNk4famWOWPTHVCkniCqIAEic0gHuR51k5FbMGhokjM1sbWXJ';
+  static final String _apiKey = dotenv.env['NOSY_API_KEY'] ?? '';
 
-  /// Cihazın lokasyonuna (latitude ve longitude) göre en yakın hastaneleri getirir.
   Future<List<dynamic>?> getHospitalsByLocation({
     required double latitude,
     required double longitude,
@@ -15,7 +14,6 @@ class HospitalApiService {
     return _sendRequest(url);
   }
 
-  /// İl ve (opsiyonel) ilçe slug değerine göre hastaneleri getirir.
   Future<List<dynamic>?> getHospitals({
     required String citySlug,
     String? districtSlug,

@@ -1,5 +1,4 @@
 class CityData {
-  // Türkiye genelindeki tüm iller ve başlıca ilçeleri.
   static const Map<String, List<String>> turkeyCities = {
     "Adana": ["Aladağ", "Ceyhan", "Çukurova", "Feke", "İmamoğlu", "Karaisalı", "Karataş", "Kozan", "Pozantı", "Saimbeyli", "Sarıçam", "Seyhan", "Tufanbeyli", "Yumurtalık", "Yüreğir"],
     "Adıyaman": ["Besni", "Çelikhan", "Gerger", "Gölbaşı", "Kâhta", "Merkez", "Samsat", "Sincik", "Tut"],
@@ -84,6 +83,5 @@ class CityData {
     "Düzce": ["Akçakoca", "Cumayeri", "Çilimli", "Gölyaka", "Gümüşova", "Kaynaşlı", "Merkez", "Yığılca"],
   };
 
-  // Sadece il isimlerini alfabetik liste olarak döndürür
   static List<String> get cities => turkeyCities.keys.toList()..sort();
 }

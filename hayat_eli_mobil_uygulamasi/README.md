@@ -34,16 +34,44 @@ flutter pub get
 ```
 
 ### 3. API Anahtarlarını Ayarlayın (Kritik)
-Kök dizinde bir `.env` dosyası oluşturun ve aşağıdaki anahtarları kendi API keylerinizle doldurun:
+Uygulama dış servislerle haberleşmek için API anahtarlarına ihtiyaç duyar. Kök dizinde bir `.env` dosyası oluşturun ve aşağıdaki şablonu doldurun:
+
 ```env
 GOOGLE_MAPS_KEY=YOUR_GOOGLE_MAPS_API_KEY
 NOSY_API_KEY=YOUR_NOSY_API_KEY
+EMAILJS_SERVICE_ID=YOUR_EMAILJS_SERVICE_ID
+EMAILJS_TEMPLATE_ID=YOUR_EMAILJS_TEMPLATE_ID
+EMAILJS_PUBLIC_KEY=YOUR_EMAILJS_PUBLIC_KEY
 ```
 
+#### 3.1. Google Maps API Key Nasıl Alınır?
+1. [Google Cloud Console](https://console.cloud.google.com/) üzerinden bir proje oluşturun.
+2. **APIs & Services > Library** kısmından şu servisleri etkinleştirin:
+   - Maps SDK for Android / iOS
+   - Directions API
+   - Places API
+3. **Credentials** sekmesinden bir API Key oluşturun.
+4. **Güvenlik İçin:** Oluşturduğunuz anahtarı Google Cloud üzerinden "API Restrictions" panelinden sadece yukarıdaki servislerle kısıtlamanız şiddetle önerilir.
+
+#### 3.2. Nosy API Key Nasıl Alınır? (Eczane Verileri)
+1. [Nosy API](https://nosyapi.com/) adresine kayıt olun.
+2. Panel üzerinden "Nöbetçi Eczane" ve "Hastane" servisleri için ücretsiz krediniz biterse ekstradan desteğe yazıp kredi alabilirsiniz.
+3. Size verilen API Key'i `.env` dosyasındaki `NOSY_API_KEY` alanına yapıştırın.
+
+#### 3.3. EmailJS Kurulumu (OTP Doğrulaması)
+1. [EmailJS](https://www.emailjs.com/) hesabınıza giriş yapın.
+2. Bir **Email Service** bağlayın.
+3. Bir **Email Template** oluşturun. Mesaj gövdesinde şu değişkenlerin bulunduğundan emin olun: 
+   - `{{otp_code}}`, `{{user_email}}`, `{{time}}`
+4. Account sekmesinden **Public Key**'i, Service sekmesinden **Service ID**'yi ve Template sekmesinden **Template ID**'yi alarak `.env` dosyasına kaydedin.
+
 ### 4. Firebase Yapılandırması
-Firebase konsolu üzerinden oluşturduğunuz projenin yapılandırma dosyalarını ekleyin:
-- Android: `android/app/google-services.json`
-- iOS: `ios/Runner/GoogleService-Info.plist`
+1. [Firebase Console](https://console.firebase.google.com/) üzerinden yeni bir proje oluşturun.
+2. Android ve iOS uygulamalarını projeye ekleyin.
+3. Yapılandırma dosyalarını projenize yerleştirin:
+   - Android: `android/app/google-services.json`
+   - iOS: `ios/Runner/GoogleService-Info.plist`
+4. `lib/firebase_options.dart` dosyası FlutterFire CLI tarafından oluşturulacaktır. İçerideki `apiKey` değerleri istemci tarafı tanımlayıcılardır; ancak güvenliği artırmak için Firebase Console üzerinden **App Check** özelliğini aktif etmeniz önerilir.
 
 ### 5. Uygulamayı Başlatın
 ```bash

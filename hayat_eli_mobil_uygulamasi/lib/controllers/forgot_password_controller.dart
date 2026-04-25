@@ -45,13 +45,11 @@ class ForgotPasswordController extends Notifier<ForgotPasswordState> {
   }
 
   Future<void> sendPasswordReset(String email) async {
-    // 1. E-posta boş mu kontrolü
     if (email.isEmpty) {
       state = state.copyWith(message: "Lütfen bir e-posta adresi giriniz.", isError: true, isSuccess: false);
       return;
     }
     
-    // 2. Format kontrolü (Kötü niyetli string/payload koruması)
     final emailRegex = RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
     if (!emailRegex.hasMatch(email)) {
       state = state.copyWith(message: "Lütfen geçerli bir e-posta adresi formatı giriniz.", isError: true, isSuccess: false);
@@ -61,7 +59,6 @@ class ForgotPasswordController extends Notifier<ForgotPasswordState> {
     state = state.copyWith(isLoading: true, clearMessage: true, isSuccess: false);
 
     try {
-      // 3. Firestore sorgusu: Kullanıcı veritabanında var mı?
       final querySnapshot = await firestore
           .collection('users')
           .where('email', isEqualTo: email)
@@ -78,7 +75,6 @@ class ForgotPasswordController extends Notifier<ForgotPasswordState> {
         return;
       }
 
-      // 4. Veritabanında varsa şifre sıfırlama linkini gönder
       final error = await authService.sendPasswordReset(email: email);
 
       if (error == null) {

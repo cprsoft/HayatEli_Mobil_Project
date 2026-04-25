@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:geolocator/geolocator.dart'; // GPS Eklentisi eklendi
+import 'package:geolocator/geolocator.dart'; 
 
 import '../utils/city_data.dart';
 import '../services/hospital_api_service.dart';
@@ -18,11 +18,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMixin {
   bool isHospitalSelected = true;
   
-  // Combobox Durum Yönetimi
   String? _selectedCity;
   String? _selectedDistrict;
 
-  // Arama Durum Yönetimi
   bool _isLoading = false;
   bool _hasSearched = false;
   List<dynamic> _placesList = [];
@@ -30,7 +28,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  // Slug Çevirici Metot (Örn: "Şanlıurfa" -> "sanliurfa")
   String _toSlug(String text) {
     return text
         .replaceAll('I', 'i')
@@ -69,7 +66,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     super.dispose();
   }
 
-  // Sayfayı Yukarıdan Çekerek Yenileme (Pull-to-Refresh / Reset)
   Future<void> _onRefresh() async {
     setState(() {
       _selectedCity = null;
@@ -79,11 +75,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       isHospitalSelected = true;
       _isLoading = false;
     });
-    // Kısacık bir bekleme süresi, pürüzsüz UX sağlar.
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
-  // API Sorgulama Metodu
   Future<void> _searchPlaces() async {
     if (_selectedCity == null) return;
     
@@ -106,7 +100,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       _hasSearched = true;
       if (results != null) {
         _placesList = results;
-        // İlçe seçilmemişse alfabetik sıraya (isimlerine göre) (A-Z) diziyoruz
         if (_selectedDistrict == null) {
           _placesList.sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
         }
@@ -117,12 +110,10 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     });
   }
 
-  // En Yakın Noktayı Bulma Metodu (GPS tabanlı)
   Future<void> _findNearest() async {
     setState(() => _isLoading = true);
 
     try {
-      // 1. GPS Servisi açık mı kontrol et
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
@@ -133,7 +124,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         return;
       }
 
-      // 2. İzinler verilmiş mi kontrol et
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -154,10 +144,9 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         return;
       }
 
-      // 3. Google tahminlerini değil donanımsal çipi (GPS) zorlayarak en iyi doğruluğu al.
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.bestForNavigation,
-        forceAndroidLocationManager: true, // Baz istasyonu yamalarını pas geçip net uydu bağını ara.
+        forceAndroidLocationManager: true, 
         timeLimit: const Duration(seconds: 15),
       );
 
@@ -198,11 +187,10 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         child: RefreshIndicator(
           color: const Color(0xFFFF2121),
           backgroundColor: Colors.white,
-          onRefresh: _onRefresh, // Çek-bırak sıfırlama mekanizması
+          onRefresh: _onRefresh, 
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             slivers: [
-              // ÜST VE FİLTRELEME KISMI
               SliverToBoxAdapter(
                 child: Column(
                   children: [
@@ -215,7 +203,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 ),
               ),
               
-              // LİSTE KISMI (Padding eklendiği için BottomNavBar'ın altında kalmayacak)
               _buildPlacesList(),
             ],
           ),
@@ -224,7 +211,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     );
   }
 
-  // --- PREMIUM NAVBAR (IOS Style Floating Pill) ---
   Widget _buildPremiumSegmentedControl() {
     return Container(
       height: 60,
@@ -236,8 +222,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       ),
       child: Stack(
         children: [
-          // Kayan Kan Kırmızısı Arka Plan
-          AnimatedAlign(
             alignment: isHospitalSelected ? Alignment.centerLeft : Alignment.centerRight,
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOutCubic,
@@ -263,9 +247,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             ),
           ),
           
-          // Tıklanabilir Butonlar
-          Positioned.fill(
-            child: Row(
               children: [
                 Expanded(
                   child: GestureDetector(

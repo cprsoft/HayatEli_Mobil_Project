@@ -5,24 +5,20 @@ import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import '../utils/validators.dart';
 
-// ─── State Sınıfı ───
 class SignUpState {
   final bool isLoading;
   final String? errorMessage;
   
-  // Telefon Doğrulama Durumları
   final bool isPhoneOtpSent;
   final bool isPhoneVerified;
   final bool isPhoneOtpExpired;
   final int phoneSecondsLeft;
   
-  // E-Posta Doğrulama Durumları
   final bool isEmailLinkSent;
   final bool isEmailVerified;
   final bool isEmailLinkExpired;
   final int emailSecondsLeft;
 
-  // Acil Durum Kişileri
   final List<EmergencyContact> emergencyContacts;
 
   SignUpState({
@@ -69,12 +65,10 @@ class SignUpState {
   }
 }
 
-// ─── Provider ───
 final signUpControllerProvider = NotifierProvider<SignUpController, SignUpState>(() {
   return SignUpController();
 });
 
-// ─── Controller ───
 class SignUpController extends Notifier<SignUpState> {
   late AuthService authService;
   Timer? _phoneTimer;
@@ -97,14 +91,10 @@ class SignUpController extends Notifier<SignUpState> {
     state = state.copyWith(clearError: true);
   }
 
-  // ==========================================
-  // TELEFON BİLGİLERİ (OTP GÖNDERME & DOĞRULAMA)
-  // ==========================================
 
   Future<bool> sendPhoneOtp(String phoneNumber) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
-    // Siber Güvenlik Kontrolü: Bu numaranın zaten sistemde kayıtlı olup olmadığını denetle
     try {
       final querySnapshot = await authService.firestore
           .collection('users')
@@ -199,9 +189,6 @@ class SignUpController extends Notifier<SignUpState> {
     _verificationId = null;
   }
 
-  // ==========================================
-  // E-POSTA DOĞRULAMA (6 HANELİ KOD)
-  // ==========================================
 
   Future<bool> sendEmailOtp({required String email}) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -266,9 +253,6 @@ class SignUpController extends Notifier<SignUpState> {
     );
   }
 
-  // ==========================================
-  // ACİL DURUM KİŞİLERİ YÖNETİMİ
-  // ==========================================
 
   void addEmergencyContact(EmergencyContact contact) {
     if (state.emergencyContacts.length >= 5) {
@@ -287,14 +271,10 @@ class SignUpController extends Notifier<SignUpState> {
     state = state.copyWith(emergencyContacts: updatedList);
   }
 
-  // ==========================================
-  // KAYIT İŞLEMİ (SON ADIM - GERÇEK KAYIT BURADA)
-  // ==========================================
 
   Future<bool> registerUser(UserModel userModel, {required String password, File? profileImage}) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
-    // 1. ÖNCE FIREBASE AUTH KAYDINI YAP
     final authError = await authService.registerWithEmail(
       email: userModel.email,
       password: password,
@@ -305,14 +285,12 @@ class SignUpController extends Notifier<SignUpState> {
       return false;
     }
 
-    // 2. KAYIT BAŞARILIYSA UID'Yİ AL
     final realUid = authService.currentUser?.uid;
     if (realUid == null) {
       state = state.copyWith(isLoading: false, errorMessage: 'Kullanıcı oluşturuldu ama oturum açılamadı.');
       return false;
     }
 
-    // 3. PROFİL BİLGİLERİNİ HAZIRLA
     final sanitizedUser = UserModel(
       uid: realUid,
       firstName: Validators.sanitize(userModel.firstName),
@@ -336,7 +314,6 @@ class SignUpController extends Notifier<SignUpState> {
       profilePictureUrl: userModel.profilePictureUrl,
     );
 
-    // 4. FOTOĞRAF VARSA YÜKLE
     String? photoUrl;
     if (profileImage != null) {
       photoUrl = await authService.uploadProfileImage(
@@ -345,7 +322,6 @@ class SignUpController extends Notifier<SignUpState> {
       );
     }
 
-    // 5. FIRESTORE'A KAYDET
     final finalUser = sanitizedUser.copyWith(profilePictureUrl: photoUrl);
     final firestoreError = await authService.saveUserProfile(finalUser);
     

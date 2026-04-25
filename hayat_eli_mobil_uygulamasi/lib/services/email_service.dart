@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final emailServiceProvider = Provider((ref) => EmailService());
 
 class EmailService {
-  static const String _serviceId = 'service_ndydpwk';
-  static const String _templateId = 'template_gfgzmod';
-  static const String _publicKey = 'SoBBPoQB1VVY6DpvQ';
+  static final String _serviceId = dotenv.env['EMAILJS_SERVICE_ID'] ?? '';
+  static final String _templateId = dotenv.env['EMAILJS_TEMPLATE_ID'] ?? '';
+  static final String _publicKey = dotenv.env['EMAILJS_PUBLIC_KEY'] ?? '';
 
   Future<bool> sendLoginOtp({
     required String email,

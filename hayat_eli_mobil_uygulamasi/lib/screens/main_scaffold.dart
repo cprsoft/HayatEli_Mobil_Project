@@ -8,7 +8,6 @@ import 'profile_screen.dart';
 import 'sign_in.dart';
 import '../services/auth_service.dart';
 
-// BottomNav index yönetimi
 class BottomNavNotifier extends Notifier<int> {
   @override
   int build() => 0;
@@ -21,7 +20,6 @@ final bottomNavIndexProvider = NotifierProvider<BottomNavNotifier, int>(BottomNa
 class MainScaffold extends ConsumerWidget {
   const MainScaffold({super.key});
 
-  // Kilitli sekmeye tıklayınca açılan uyarı
   void _showRegistrationDialog(BuildContext context) {
     showDialog(
       context: context,

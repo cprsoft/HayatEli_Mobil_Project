@@ -7,13 +7,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _lastAddressKey = 'last_known_address';
 
-// Konum verisini tutacak State nesnesi
 class LocationState {
   final bool isLoading;
   final String? address;
-  final String? lastKnownAddress; // SharedPreferences'tan gelen son bilinen konum
+  final String? lastKnownAddress; 
   final String? error;
-  final bool needsLocationPermission; // Dialog göstermek için flag
+  final bool needsLocationPermission; 
 
   LocationState({
     this.isLoading = false,
@@ -41,7 +40,6 @@ class LocationState {
   }
 }
 
-// Konum işlemlerini yönetecek Notifier
 class LocationNotifier extends Notifier<LocationState> {
   StreamSubscription<ServiceStatus>? _serviceStatusStreamSubscription;
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -53,13 +51,10 @@ class LocationNotifier extends Notifier<LocationState> {
       _positionStreamSubscription?.cancel();
     });
 
-    // 1. Son bilinen konumu yükle
     _loadLastKnownAddress();
 
-    // 2. Canlı konumu başlat (isLoading: false ile başla ki takılı kalmasın)
     _determinePosition();
 
-    // 3. GPS servis durumunu dinle
     if (!kIsWeb) {
       _serviceStatusStreamSubscription = Geolocator.getServiceStatusStream().listen((ServiceStatus status) {
         if (status == ServiceStatus.enabled) {
@@ -91,29 +86,24 @@ class LocationNotifier extends Notifier<LocationState> {
     await prefs.setString(_lastAddressKey, address);
   }
 
-  /// Dışarıdan tetiklenebilen yenileme metodu (Örn: butonla veya dialog'dan)
   Future<void> refreshLocation() async {
     state = state.copyWith(isLoading: true, needsLocationPermission: false, clearError: true);
     await _determinePosition();
   }
 
-  /// Kullanıcı ayarlara gittikten sonra döndüğünde çağrılır
   Future<void> checkLocationAfterSettings() async {
     await refreshLocation();
   }
 
   Future<void> _determinePosition() async {
-    // Kapanmış eski pozisyon stream'i varsa temizle
     await _positionStreamSubscription?.cancel();
 
-    // 1. GPS açık mı kontrol et (Hızlı kontrol)
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       state = state.copyWith(isLoading: false, needsLocationPermission: true);
       return;
     }
 
-    // 2. İzin kontrolü
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -130,12 +120,10 @@ class LocationNotifier extends Notifier<LocationState> {
 
     state = state.copyWith(isLoading: true, needsLocationPermission: false);
 
-    // 3. Canlı Takibi Başlat (Stream)
-    // Cihazın kendi konum yöneticisini de devreye sokarak doğruluğu artırıyoruz.
     final locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
-      forceLocationManager: true, // Google'ın tahmini Wi-Fi/Baz tentesi yerine telefondaki saf GPS çipini zorla
+      forceLocationManager: true, 
     );
 
     _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
@@ -145,7 +133,6 @@ class LocationNotifier extends Notifier<LocationState> {
       },
     );
 
-    // 4. İlk bağlantıyı hızlandırmak için Stream dinlerken bir kere de tek atış yap
     try {
       final initial = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
@@ -174,7 +161,6 @@ class LocationNotifier extends Notifier<LocationState> {
 
         final formattedAddress = parts.join(', ');
 
-        // SharedPreferences'a kaydet
         await _saveLastKnownAddress(formattedAddress);
 
         state = state.copyWith(
@@ -190,5 +176,4 @@ class LocationNotifier extends Notifier<LocationState> {
   }
 }
 
-// UI'dan erişeceğimiz Provider
 final locationProvider = NotifierProvider<LocationNotifier, LocationState>(LocationNotifier.new);

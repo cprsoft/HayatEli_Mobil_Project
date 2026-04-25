@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/email_service.dart';
 
-// ─── State Sınıfı ───
 class SignInState {
   final bool isLoading;
   final String? errorMessage;
@@ -40,12 +39,10 @@ class SignInState {
   }
 }
 
-// ─── Provider ───
 final signInControllerProvider = NotifierProvider<SignInController, SignInState>(() {
   return SignInController();
 });
 
-// ─── Controller ───
 class SignInController extends Notifier<SignInState> {
   Timer? _emailTimer;
   Timer? _phoneTimer;
@@ -68,9 +65,6 @@ class SignInController extends Notifier<SignInState> {
     state = state.copyWith(clearError: true);
   }
 
-  // ==========================================
-  // 1. E-POSTA İŞLEMLERİ (Doğrudan Giriş)
-  // ==========================================
 
   Future<bool> signInWithEmail(String email, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -100,14 +94,10 @@ class SignInController extends Notifier<SignInState> {
     }
   }
 
-  // ==========================================
-  // 2. TELEFON İŞLEMLERİ
-  // ==========================================
 
   Future<bool> sendPhoneOtp(String phoneNumber) async {
     state = state.copyWith(isLoading: true, clearError: true);
 
-    // 1. Önce Firestore üzerinden bu numaranın kayıtlı olup olmadığını kontrol ediyoruz.
     try {
       final querySnapshot = await authService.firestore
           .collection('users')
@@ -128,7 +118,6 @@ class SignInController extends Notifier<SignInState> {
       return false;
     }
 
-    // 2. Hesabı doğruladıktan sonra OTP'yi başlat
     final error = await authService.sendPhoneOtp(
       phoneNumber: phoneNumber,
       onCodeSent: (verificationId) {

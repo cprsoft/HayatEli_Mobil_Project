@@ -12,7 +12,6 @@ class ProfileState {
   final UserModel? originalUser;
   final UserModel? editedUser;
 
-  // Doğrulama Durumları
   final bool isEmailVerified;
   final bool isPhoneVerified;
   final bool showEmailVerificationDialog;
@@ -74,7 +73,6 @@ class ProfileController extends Notifier<ProfileState> {
 
   @override
   ProfileState build() {
-    // Profil verisini stream'den dinleyelim
     final userProfile = ref.watch(userProfileProvider).value;
     
     ref.onDispose(() {
@@ -105,7 +103,6 @@ class ProfileController extends Notifier<ProfileState> {
       currentMedications: currentMedications,
     );
 
-    // E-posta veya telefon değiştiyse doğrulama durumunu güncelle
     bool emailChanged = email != null && email != state.originalUser?.email;
     bool phoneChanged = phone != null && phone != state.originalUser?.phone;
 
@@ -117,7 +114,6 @@ class ProfileController extends Notifier<ProfileState> {
     );
   }
 
-  // --- E-Posta İşlemleri ---
   Future<void> sendEmailOtp() async {
     final email = state.editedUser?.email;
     final validationError = Validators.validateEmail(email);
@@ -187,7 +183,6 @@ class ProfileController extends Notifier<ProfileState> {
     });
   }
 
-  // --- Telefon İşlemleri ---
   Future<void> sendPhoneOtp() async {
     final phone = state.editedUser?.phone;
     // Alan kodu ayrımı gerekebilir ama EditProfileScreen direkt dialCode ile gönderiyor
@@ -236,13 +231,11 @@ class ProfileController extends Notifier<ProfileState> {
   Future<bool> verifyPhoneOtp(String smsCode) async {
     state = state.copyWith(isLoading: true, clearError: true);
     
-    // Auth credential oluştur
     final credential = PhoneAuthProvider.credential(
       verificationId: _verificationId!,
       smsCode: smsCode,
     );
 
-    // Auth üzerindeki telefonu güncelle (veya bağla)
     final error = await _authService.updateAuthPhone(credential);
 
     if (error == null) {
@@ -270,7 +263,6 @@ class ProfileController extends Notifier<ProfileState> {
     });
   }
 
-  // --- Fotoğraf Yükleme ---
   Future<void> uploadProfilePicture(File file) async {
     final validationError = Validators.validateImageFile(file);
     if (validationError != null) {
@@ -315,7 +307,6 @@ class ProfileController extends Notifier<ProfileState> {
     }
   }
 
-  // --- Acil Durum Kişileri ---
   void addEmergencyContact(EmergencyContact contact) {
     if (state.editedUser == null) return;
     
@@ -348,7 +339,6 @@ class ProfileController extends Notifier<ProfileState> {
     state = state.copyWith(editedUser: state.editedUser!.copyWith(emergencyContacts: contacts));
   }
 
-  // --- Profil Kaydetme ---
   Future<bool> saveProfile({String? password}) async {
     if (state.editedUser == null) return false;
 
@@ -369,7 +359,6 @@ class ProfileController extends Notifier<ProfileState> {
 
     state = state.copyWith(isLoading: true, clearError: true);
 
-    // 0. Re-authenticate (Eğer kritik bilgi değiştiyse)
     if (emailChanged || phoneChanged) {
       final reauthError = await _authService.reauthenticate(password!);
       if (reauthError != null) {
@@ -378,7 +367,6 @@ class ProfileController extends Notifier<ProfileState> {
       }
     }
 
-    // 1. Benzersizlik Kontrolü (Email veya Telefon değiştiyse)
     if (emailChanged || phoneChanged) {
       final usageError = await _authService.checkEmailOrPhoneUsage(
         email: emailChanged ? state.editedUser!.email : null,
@@ -392,7 +380,6 @@ class ProfileController extends Notifier<ProfileState> {
       }
     }
     
-    // 2. Verileri temizleyelim (Sanitization)
     final sanitizedUser = state.editedUser!.copyWith(
       firstName: Validators.sanitize(state.editedUser!.firstName),
       lastName: Validators.sanitize(state.editedUser!.lastName),
@@ -404,11 +391,9 @@ class ProfileController extends Notifier<ProfileState> {
           ? Validators.sanitize(state.editedUser!.currentMedications!) : null,
     );
 
-    // 3. Firestore Güncelleme
     final error = await _authService.saveUserProfile(sanitizedUser);
     
     if (error == null) {
-      // 4. Auth Senkronizasyonu (Email değiştiyse)
       // Telefon zaten verifyPhoneOtp aşamasında Auth'a bağlandığı için burada tekrar yapmıyoruz.
       if (emailChanged) {
         final authError = await _authService.updateAuthEmail(sanitizedUser.email);

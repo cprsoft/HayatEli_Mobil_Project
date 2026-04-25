@@ -22,9 +22,7 @@ void main() async {
         androidProvider: AndroidProvider.debug,
         appleProvider: AppleProvider.debug,        
       );
-    } else {
-      androidProvider : ReCaptchaV3Provider.debug
-    }
+    } 
   } catch (e) {
     debugPrint("Firebase başlatılamadı: $e");
   }

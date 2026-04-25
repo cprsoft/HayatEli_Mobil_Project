@@ -1,37 +1,19 @@
-/// Merkezi Doğrulama ve Güvenlik Motoru
-/// Bu dosya WAF'sız (Web Application Firewall) ortamda manuel güvenlik katmanı sağlar.
-/// Korunulan saldırı vektörleri:
-///   - XSS (Cross-Site Scripting)
-///   - SQL Injection
-///   - NoSQL Injection (Firestore için)
-///   - RCE (Remote Code Execution) tetikleyicileri
-///   - CSRF destek kontrolleri (input tarafı)
-///   - Path Traversal
-///   - Command Injection
-///   - Template Injection (SSTI)
-///   - Format String Attacks
 library;
 
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
 class Validators {
-  // ──────────────────────────────────────────────────────────────
-  // 0. DOSYA / PROFIL FOTOĞRAFI DOĞRULAMA
-  // ──────────────────────────────────────────────────────────────
   
-  /// Dosya formatı ve boyutu kontrolü (Vesikalık/Profil Fotoğrafı için)
   static String? validateImageFile(File? file, {int maxSizeInBytes = 2 * 1024 * 1024}) {
-    if (file == null) return null; // Fotoğraf isteğe bağlıysa
+    if (file == null) return null; 
 
     if (!file.existsSync()) return 'Seçilen dosya bulunamadı.';
 
-    // 1. Boyut Kotrolü (2MB)
     if (file.lengthSync() > maxSizeInBytes) {
       return 'Fotoğraf boyutu 2 MB\'dan küçük olmalıdır.';
     }
 
-    // 2. Uzantı Kontrolü (Güvenlik için exe vb. engelleme)
     final extension = p.extension(file.path).toLowerCase().replaceAll('.', '');
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     
@@ -42,10 +24,6 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 1. E-POSTA DOĞRULAMA
-  // Yalnızca kişisel büyük e-posta sağlayıcıları — kurumsal domain yok
-  // ──────────────────────────────────────────────────────────────
 
   static const List<String> _allowedDomains = [
     // Google
@@ -62,7 +40,6 @@ class Validators {
     'yandex.com', 'yandex.ru',
   ];
 
-  /// Bilinen tek kullanımlık (disposable) ve geçici mail domain'leri
   static const List<String> _blockedDomains = [
     'mailinator.com', 'guerrillamail.com', 'tempmail.com',
     'throwam.com', '10minutemail.com', 'yopmail.com',
@@ -96,12 +73,10 @@ class Validators {
 
     final domain = email.split('@').last;
 
-    // Tek kullanımlık mail kontrolü
     if (_blockedDomains.any((d) => domain == d || domain.endsWith('.$d'))) {
       return 'Tek kullanımlık e-posta adresleri kabul edilmemektedir.';
     }
 
-    // Yalnızca kişisel büyük sağlayıcılar
     final isAllowed = _allowedDomains.contains(domain);
     if (!isAllowed) {
       return 'Lütfen Gmail, Outlook, Yahoo veya iCloud gibi kişisel e-posta adresi kullanın.\n(Kurumsal, okul veya geçici e-posta kabul edilmez.)';
@@ -110,9 +85,6 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 2. TELEFON NUMARASI DOĞRULAMA
-  // ──────────────────────────────────────────────────────────────
 
   static String? validatePhone(String? number, {String dialCode = '+90'}) {
     if (number == null || number.trim().isEmpty) {
@@ -144,9 +116,6 @@ class Validators {
     return '$dialCode$cleaned';
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 3. T.C. KİMLİK NO DOĞRULAMA (Matematiksel algoritma)
-  // ──────────────────────────────────────────────────────────────
 
   static String? validateTcNo(String? value) {
     if (value == null || value.trim().isEmpty) {
@@ -173,9 +142,6 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 4. ŞİFRE DOĞRULAMA
-  // ──────────────────────────────────────────────────────────────
 
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Şifre zorunludur.';
@@ -198,9 +164,6 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 5. AD SOYAD DOĞRULAMA
-  // ──────────────────────────────────────────────────────────────
 
   static String? validateName(String? value, {String fieldName = 'Ad'}) {
     if (value == null || value.trim().isEmpty) return '$fieldName zorunludur.';
@@ -210,7 +173,6 @@ class Validators {
     if (_containsAttackPatterns(value)) {
       return '$fieldName geçersiz karakter içeriyor.';
     }
-    // Sadece Türkçe/İngilizce harf, boşluk, tire ve nokta
     if (!RegExp(r"^[a-zA-ZğüşöçıİĞÜŞÖÇ\s'\-\.]+$").hasMatch(value.trim())) {
       return '$fieldName yalnızca harf içermelidir.';
     }
@@ -220,9 +182,6 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 6. ZORUNLU ALAN
-  // ──────────────────────────────────────────────────────────────
 
   static String? validateRequired(String? value, {String fieldName = 'Bu alan'}) {
     if (value == null || value.trim().isEmpty) return '$fieldName zorunludur.';
@@ -232,12 +191,7 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 7. SERBEST METİN ALANLARI (Alerji, Kronik Hastalık, İlaçlar vb.)
-  // Bu alanlar isteğe bağlıdır ama güvenli olmalıdır.
-  // ──────────────────────────────────────────────────────────────
 
-  /// Alerji, kronik hastalık, ilaç gibi serbest metin alanları için
   static String? validateFreeText(String? value, {String fieldName = 'Alan'}) {
     if (value == null || value.trim().isEmpty) return null; // İsteğe bağlı
 
@@ -252,9 +206,6 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 8. PASAPORT NO
-  // ──────────────────────────────────────────────────────────────
 
   static String? validatePassport(String? value) {
     if (value == null || value.trim().isEmpty) return 'Pasaport no zorunludur.';
@@ -265,18 +216,8 @@ class Validators {
     return null;
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // !! GÜVENLIK FILTRESI — TÜM SALDIRI VEKTÖRLERİ !!
-  // WAF olmayan ortamda manuel koruma katmanı
-  // ──────────────────────────────────────────────────────────────
 
-  /// Tüm bilinen saldırı kalıplarını tek noktada kontrol eder.
-  /// Korunan vektörler:
-  ///   XSS, HTML Injection, SQL Injection, NoSQL Injection,
-  ///   Command Injection, RCE, Path Traversal, Template Injection,
-  ///   LDAP Injection, Format String, CRLF Injection
   static bool _containsAttackPatterns(String value) {
-    // ── XSS & HTML Injection ──
     final xss = RegExp(
       r'<[^>]*>|javascript:|vbscript:|data:|on\w+\s*=|alert\s*\(|'
       r'prompt\s*\(|confirm\s*\(|document\.|window\.|eval\s*\(|'
@@ -284,7 +225,6 @@ class Validators {
       caseSensitive: false,
     );
 
-    // ── SQL Injection ──
     final sql = RegExp(
       r'''('|")\s*(OR|AND|UNION|SELECT|INSERT|UPDATE|DELETE|DROP|'''
       r'CREATE|ALTER|EXEC|EXECUTE|TRUNCATE|GRANT|REVOKE|MERGE)\s'
@@ -293,14 +233,12 @@ class Validators {
       caseSensitive: false,
     );
 
-    // ── NoSQL Injection (Firestore/MongoDB) ──
     final nosql = RegExp(
       r'\$where|\$gt|\$lt|\$ne|\$in|\$nin|\$or|\$and|\$not|\$nor|'
       r'\$exists|\$type|\$mod|\$regex|\$text|\$where|\{.*:.*\}',
       caseSensitive: false,
     );
 
-    // ── Command Injection & RCE ──
     final cmd = RegExp(
       r';\s*(ls|cat|rm|mv|cp|wget|curl|bash|sh|cmd|powershell|'
       r'python|ruby|perl|php|node|exec|system|passthru|popen)\b|'
@@ -308,24 +246,19 @@ class Validators {
       caseSensitive: false,
     );
 
-    // ── Path Traversal ──
     final pathTraversal = RegExp(
       r'\.\./|\.\.\\|%2e%2e|%252e%252e|\.\.%2f|\.\.%5c',
       caseSensitive: false,
     );
 
-    // ── Template/SSTI Injection ──
     final ssti = RegExp(
       r'\{\{.*\}\}|\{%.*%\}|\${.*}|\#\{.*\}',
     );
 
-    // ── CRLF Injection ──
     final crlf = RegExp(r'\r|\n|\%0d|\%0a', caseSensitive: false);
 
-    // ── LDAP Injection ──
     final ldap = RegExp(r'[)(|!\\*\x00]');
 
-    // ── Format String ──
     final fmt = RegExp(r'%[0-9]*[diouxXeEfgGs]|%n|%p');
 
     return xss.hasMatch(value) ||
@@ -339,12 +272,7 @@ class Validators {
         fmt.hasMatch(value);
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 9. TEMİZLEME (SANITIZATION) — Firestore'a yazmadan önce uygula
-  // ──────────────────────────────────────────────────────────────
 
-  /// Girdiyi tüm tehlikeli karakterlerden temizler.
-  /// Kullanım: Firestore'a yazmadan hemen önce çağrılmalıdır.
   static String sanitize(String input) {
     return input
         .trim()
@@ -360,9 +288,6 @@ class Validators {
         .replaceAll(RegExp(r'  +'), ' ');
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 10. ALAN KODU LİSTESİ
-  // ──────────────────────────────────────────────────────────────
 
   static const List<Map<String, String>> dialCodes = [
     {'code': '+90', 'country': '🇹🇷 Türkiye'},

@@ -3,13 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../services/cloud_tts_service.dart';
 
-/// Navigasyon alt panelleri (Adımlar, Rotalar, Ses Seçici).
 class NavigationWidgets {
   static String _removeAllHtmlTags(String htmlText) {
     return htmlText.replaceAll(RegExp(r'<[^>]*>', multiLine: true), '');
   }
 
-  /// ─── Adım Adım Liste ───
   static void showStepsBottomSheet({
     required BuildContext context,
     required List<dynamic> steps,
@@ -63,7 +61,6 @@ class NavigationWidgets {
     );
   }
 
-  /// ─── Ses Seçici Menü ───
   static void showVoiceSelector({
     required BuildContext context,
     required String selectedVoiceId,
@@ -213,7 +210,6 @@ class NavigationWidgets {
     );
   }
 
-  /// ─── Alternatif Rota Paneli ───
   static void showAlternativeRoutes({
     required BuildContext context,
     required List<dynamic> routes,
@@ -274,7 +270,6 @@ class NavigationWidgets {
     );
   }
 
-  /// ─── Navigasyon Alt Bilgi Paneli (Sabit - Modern Kart) ───
   static Widget buildNavigationInfoPanel({
     required BuildContext context,
     required String remainingDistance,
@@ -346,7 +341,6 @@ class NavigationWidgets {
     );
   }
 
-  /// ─── Üst Navigasyon Bilgi Barı (Mavi - Görsel 2) ───
   static Widget buildTopNavigationHeader({
     required String instruction,
     required String distance,

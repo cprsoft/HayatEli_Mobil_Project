@@ -144,7 +144,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                     style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w500, color: _kDarkRed)),
                 const SizedBox(height: 32),
 
-                // Ana Kart
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -166,7 +165,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                           Tab(icon: Icon(Icons.phone_outlined), text: 'Telefon'),
                         ],
                       ),
-                      const Divider(height: 1),
                       Padding(
                         padding: const EdgeInsets.all(20),
                         child: Column(
@@ -219,7 +217,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                               ),
                             ],
 
-                            const SizedBox(height: 24), 
                             SizedBox(
                               width: double.infinity,
                               height: 54,
@@ -234,7 +231,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                                         }
                                       },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: _kDarkRed, // Kırmızı Buton (Kart içi beyaz olduğu için kontrast)
+                                  backgroundColor: _kDarkRed, 
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                                   elevation: 0,
@@ -256,7 +253,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                             ),
                             const SizedBox(height: 20),
 
-                            
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

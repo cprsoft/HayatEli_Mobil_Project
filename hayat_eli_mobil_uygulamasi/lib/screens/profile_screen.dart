@@ -88,7 +88,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         ),
 
-        // ─── KAYDIRILABİLİR İÇERİK ───
         Expanded(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),

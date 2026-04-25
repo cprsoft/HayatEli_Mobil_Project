@@ -21,7 +21,6 @@ class LiveLocationCard extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar
               Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
@@ -64,7 +63,6 @@ class LiveLocationCard extends ConsumerWidget {
                     } else {
                       await Geolocator.openLocationSettings();
                     }
-                    // Ayarlardan döndüğünde tekrar kontrol et
                     await ref.read(locationProvider.notifier).checkLocationAfterSettings();
                   },
                   icon: const Icon(Icons.settings, color: Colors.white),
@@ -94,7 +92,6 @@ class LiveLocationCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final locationState = ref.watch(locationProvider);
 
-    // GPS kapalıysa → bottom sheet göster
     ref.listen(locationProvider, (prev, next) {
       if ((prev?.needsLocationPermission != true) && next.needsLocationPermission) {
         final isPermanentlyDenied = next.error?.contains('kalıcı') == true;
@@ -132,7 +129,6 @@ class LiveLocationCard extends ConsumerWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               )
             else if (gpsOff && displayAddress != null) ...[
-              // GPS kapalı ama cihazda kayıtlı son konum var → onu göster
               Text(
                 "📍 Son Bilinen Konum",
                 style: GoogleFonts.outfit(

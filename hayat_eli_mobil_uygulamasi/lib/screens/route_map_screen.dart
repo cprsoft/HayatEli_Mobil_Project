@@ -44,19 +44,16 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
   bool _isTrafficEnabled = false;
   String _travelMode = 'driving';
 
-  // Cloud TTS + Audio Player
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isTtsEnabled = true;
   String _selectedVoiceGender = 'male';
   String _selectedVoiceId = CloudTtsService.defaultMaleVoiceId;
-  double _currentSpeed = 0.0; // km/h
+  double _currentSpeed = 0.0; 
   bool _isSpeaking = false;
 
-  // Alternatif Rotalar State
   List<Map<String, dynamic>> _alternativeRoutes = [];
   int _selectedRouteIndex = 0;
 
-  // İkonlar
   BitmapDescriptor? _carMarkerIcon;
   BitmapDescriptor? _walkMarkerIcon;
 
@@ -75,7 +72,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
     super.dispose();
   }
 
-  // ─── Yardımcılar ───
 
   Future<void> _createCustomMarkers() async {
     _carMarkerIcon = await _drawNavArrow(const Color(0xFF1A73E8), Icons.navigation_rounded, 64);
@@ -104,8 +100,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
   }
-
-  // ─── Aksiyonlar ───
 
   Future<void> _initRoute() async {
     setState(() {
@@ -191,7 +185,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
     navigationStream = Geolocator.getPositionStream(locationSettings: const LocationSettings(accuracy: LocationAccuracy.bestForNavigation, distanceFilter: 8)).listen((pos) {
       if (!mounted) return;
       
-      // EMA logic
       smoothLat = smoothLat == null ? pos.latitude : smoothLat! * (1 - alpha) + pos.latitude * alpha;
       smoothLng = smoothLng == null ? pos.longitude : smoothLng! * (1 - alpha) + pos.longitude * alpha;
       if (pos.speed >= speedThresholdMs) {
@@ -213,14 +206,12 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
         _currentSpeed = pos.speed * 3.6; // m/s to km/h
         _updateNavMarker(currentLoc, bearing);
         
-        // Periyodik Gece Modu Kontrolü (Dinamik)
         _checkDayNightStyle(currentLoc);
 
-        // Rota Başlangıcına Bağlantı Çizgisi (Dotted Line)
         if (routePoints.isNotEmpty) {
           _polylines.removeWhere((p) => p.polylineId.value == 'connect_to_start');
           final distToStart = calcDistance(currentLoc, routePoints.first);
-          if (distToStart > 10) { // Sadece 10 metreden fazlaysa göster
+          if (distToStart > 10) { 
             _polylines.add(Polyline(
               polylineId: const PolylineId('connect_to_start'),
               points: [currentLoc, routePoints.first],
@@ -266,7 +257,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
         }
       }
 
-      // Recalc (Hız ve Mesafe Filtresi ile Jitter Engelleme)
+      // Recalc 
       final dOff = _distanceToPolyline(currentLoc);
       if (pos.speed > 2.0 && dOff > 85) {
         _recalculateLocal(currentLoc);
@@ -442,7 +433,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
             myLocationEnabled: !isNavigating, myLocationButtonEnabled: false, trafficEnabled: _isTrafficEnabled,
             onMapCreated: (c) {
               _mapController = c;
-              // Otomatik Gece Modu (18:00 - 06:00)
+              // Otomatik Gece Modu 
               final hour = DateTime.now().hour;
               if (hour >= 18 || hour < 6) {
                 _mapController?.setMapStyle(MapStyles.nightStyle);
@@ -457,7 +448,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
               maneuverIcon: _getManeuverIcon(currentInstruction),
             ),
 
-          // Üst Mod Sekmeleri
           if (!isNavigating)
             Positioned(
               top: MediaQuery.of(context).padding.top + 70,
@@ -475,7 +465,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
               ),
             ),
 
-          // Sağ FAB Grubu
           NavigationFabGroup(
             isNavigating: isNavigating,
             isTrafficEnabled: _isTrafficEnabled,
@@ -489,7 +478,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
             onMapTypeTap: () => setState(() => _currentMapType = _currentMapType == MapType.normal ? MapType.satellite : MapType.normal),
           ),
 
-          // Hız Göstergesi (Navigation sırasında)
           if (isNavigating)
             Positioned(
               bottom: 110, left: 16,
@@ -509,7 +497,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> with NavigationLogic {
               ),
             ),
 
-          // Alt Başlat / Bilgi Paneli (Floating Card yapısı eklendi)
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: isNavigating ? _buildNavPanel() : Container(

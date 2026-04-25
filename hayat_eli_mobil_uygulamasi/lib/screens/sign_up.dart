@@ -39,7 +39,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   DateTime? _birthDate;
   String _gender = 'Erkek';
   final _emailController = TextEditingController();
-  final _emailOtpController = TextEditingController(); 
+  final _emailOtpController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   final _phoneController = TextEditingController();

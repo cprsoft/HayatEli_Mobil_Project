@@ -41,7 +41,7 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
       context: context,
       isDismissible: false,
       enableDrag: false,
-      isScrollControlled: true, 
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -86,8 +86,8 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
-                    Navigator.pop(context); // Diyaloğu Kapat
-                    _startSosCountdown(isForSelf: false); // Geri Sayımı Başlat
+                    Navigator.pop(context); 
+                    _startSosCountdown(isForSelf: false); 
                   },
                   child: const Text("BAŞKASI İÇİN (Sadece Ara)", style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
@@ -190,20 +190,6 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
   
   Future<void> _executeSosAction({required BuildContext context, required bool isForSelf}) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: '112');
-    
-   
-    final locationState = ref.read(locationProvider);
-    String locationText = locationState.address ?? "Adres alınamadı";
-    
-    if (isForSelf) {
-      // TODO: Firebase Entegrasyonu ile ileride Acil Kişi numaraları veritabanından çekilecek
-      // Şimdilik test amaçlı örnek bir numara atıyoruz.
-      String emergencyPhone = "05555555555"; 
-      
-      // Google Maps Linki Hazırlama (Eğer enlem/boylam yoksa sadece adres gider)
-      String googleMapsUrl = "";
-      // Not: location_service.dart içerisinde Position'ı (enlem/boylam) state'e ekleyip buradan okumak en sağlıklısı
-      // Şimdilik sadece adresi link olarak gönderiyoruz (Arama kurgusu)
       googleMapsUrl = "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(locationText)}";
       
       String message = "ACİL DURUM! Acil yardıma ihtiyacım var.\n"
@@ -257,7 +243,7 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
           width: 190,
           height: 190,
           decoration: BoxDecoration(
-            color: const Color(0xFFB71C1C), // Kan kırmızısı (Blood red)
+            color: const Color(0xFFB71C1C), 
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(

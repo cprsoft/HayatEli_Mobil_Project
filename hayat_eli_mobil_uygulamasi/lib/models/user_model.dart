@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Acil durum kişisi modeli
 class EmergencyContact {
   final String name;
   final String phone;
-  final String relationship; // Eş, Anne, Baba, Kardeş, Diğer
+  final String relationship; 
   final String? profilePictureUrl;
 
   EmergencyContact({
@@ -29,38 +28,32 @@ class EmergencyContact {
       );
 }
 
-/// Ana kullanıcı profili modeli
-/// Firestore'daki "users/{uid}" dokümanına birebir karşılık gelir
 class UserModel {
   final String uid;
 
-  // --- Bölüm 1: Kimlik Bilgileri ---
   final String firstName;
   final String lastName;
-  final String tcNo;          // AES-256 ile şifrelenmiş olarak saklanır
-  final String citizenship;   // "TC" veya "Yabancı"
-  final String? passportNo;   // Yabancı uyruklular için
+  final String tcNo;          
+  final String citizenship;   
+  final String? passportNo;   
   final DateTime birthDate;
-  final String gender;        // "Erkek", "Kadın", "Diğer"
+  final String gender;        
   final String email;
   final String phone;
   final bool isEmailVerified;
   final bool isPhoneVerified;
 
-  // --- Bölüm 2: Sağlık Bilgileri ---
-  final String bloodType;     // ZORUNLU: A+, A-, B+, B-, AB+, AB-, 0+, 0-
-  final String? chronicDiseases;     // İsteğe bağlı
-  final String? allergies;           // İsteğe bağlı (özellikle ilaç)
-  final String? currentMedications;  // İsteğe bağlı
+  final String bloodType;     
+  final String? chronicDiseases;     
+  final String? allergies;           
+  final String? currentMedications;  
 
-  // --- Bölüm 3: Acil Durum Kişileri ---
   final List<EmergencyContact> emergencyContacts;
 
-  // --- Meta ---
   final DateTime createdAt;
   final bool isProfileComplete;
 
-  final String? profilePictureUrl; // Profil fotoğrafı URL'i
+  final String? profilePictureUrl; 
 
   UserModel({
     required this.uid,
@@ -85,12 +78,11 @@ class UserModel {
     this.profilePictureUrl,
   });
 
-  /// Firestore'a yazılacak Map formatı
   Map<String, dynamic> toMap() => {
         'uid': uid,
         'firstName': firstName,
         'lastName': lastName,
-        'tcNo': tcNo, // Şifrelenmiş hali yazılacak
+        'tcNo': tcNo, 
         'citizenship': citizenship,
         'passportNo': passportNo,
         'birthDate': Timestamp.fromDate(birthDate),
@@ -109,7 +101,6 @@ class UserModel {
         'profilePictureUrl': profilePictureUrl,
       };
 
-  /// Firestore'dan okuyunca UserModel'e çevirme
   factory UserModel.fromMap(Map<String, dynamic> map) => UserModel(
         uid: map['uid'] ?? '',
         firstName: map['firstName'] ?? '',
@@ -135,7 +126,6 @@ class UserModel {
         profilePictureUrl: map['profilePictureUrl'],
       );
 
-  /// UserModel kopyalama (copyWith)
   UserModel copyWith({
     String? uid,
     String? firstName,
@@ -182,6 +172,5 @@ class UserModel {
     );
   }
 
-  /// Tam ad
   String get fullName => '$firstName $lastName';
 }

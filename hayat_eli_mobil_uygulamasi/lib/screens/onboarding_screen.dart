@@ -21,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), 
+      duration: const Duration(seconds: 2),
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -38,8 +38,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Giriş yap sayfasındaki büyük resmi önceden hafızaya (RAM) yükler. 
-    // Böylece butona tıklandığında resim 1-2 saniye gecikmez, anında ekranda belirir.
     precacheImage(const AssetImage('lib/assets/images/giris-yap-kapak.jpg'), context);
   }
 
@@ -52,7 +50,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Şık, kan kırmızısı gradient arka plan
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

@@ -9,9 +9,7 @@ import '../screens/route_map_screen.dart';
 import '../services/cloud_tts_service.dart';
 import '../services/route_service.dart';
 
-/// Navigasyon ekranının ağır mantık (GPS, Rota, Uyarılar) kısmını yöneten mixin.
 mixin NavigationLogic on State<RouteMapScreen> {
-  // ─── Durum Değişkenleri ───
   bool isLoading = true;
   String distanceText = '';
   String durationText = '';
@@ -26,25 +24,21 @@ mixin NavigationLogic on State<RouteMapScreen> {
   bool isRecalculating = false;
   DateTime? lastRecalcTime;
 
-  // EMA Filtre (Hassas Takip)
   double? smoothLat;
   double? smoothLng;
   double? smoothBearing;
   final double alpha = 0.12;
   final double speedThresholdMs = 0.5;
 
-  // TTS & GPS Kontrol
   bool navGPSReady = false;
   int lastSpokenStep = -1;
   final Set<String> spokenWarnings = {};
   StreamSubscription<Position>? navigationStream;
 
-  // ─── Temizleme Yardımcısı ───
   String removeHtml(String html) {
     return html.replaceAll(RegExp(r'<[^>]*>', multiLine: true), '');
   }
 
-  /// Mesafe Hesaplama (Haversine)
   double calcDistance(LatLng a, LatLng b) {
     const r = 6371000.0;
     final dLat = (b.latitude - a.latitude) * pi / 180;
@@ -55,7 +49,6 @@ mixin NavigationLogic on State<RouteMapScreen> {
     return r * 2 * atan2(sqrt(s), sqrt(1 - s));
   }
 
-  /// Rota Verisini Uygula
   void applyRouteData(Map<String, dynamic> routeData, int selectedIndex, List<Map<String, dynamic>> alternatives, Set<Polyline> polylines, String travelMode) {
     final List<LatLng> pts = List<LatLng>.from(routeData['polyline']);
     distanceText = routeData['distance'];
@@ -70,7 +63,6 @@ mixin NavigationLogic on State<RouteMapScreen> {
     }
 
     polylines.clear();
-    // Alternatifler (Gri)
     for (int i = 0; i < alternatives.length; i++) {
       if (i == selectedIndex) continue;
       polylines.add(Polyline(
@@ -81,7 +73,6 @@ mixin NavigationLogic on State<RouteMapScreen> {
       ));
     }
 
-    // Ana Rota
     final isWalking = travelMode == 'walking';
     polylines.add(Polyline(
       polylineId: const PolylineId('route'),
@@ -95,7 +86,6 @@ mixin NavigationLogic on State<RouteMapScreen> {
     ));
   }
 
-  /// Kamerayı Sığdır
   void fitBounds(GoogleMapController? controller, LatLng a, LatLng b) {
     if (controller == null) return;
     double minLat = min(a.latitude, b.latitude);
@@ -109,7 +99,6 @@ mixin NavigationLogic on State<RouteMapScreen> {
     controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 100));
   }
 
-  /// Durdurma
   void stopNavigationLogic(AudioPlayer player, VoidCallback onRefresh) {
     navigationStream?.cancel();
     player.stop();

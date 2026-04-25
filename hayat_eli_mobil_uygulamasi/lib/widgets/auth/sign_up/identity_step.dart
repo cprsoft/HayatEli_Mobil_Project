@@ -139,7 +139,6 @@ class _IdentityStepState extends State<IdentityStep> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Profil Fotoğrafı (Her Zaman Açık)
               Center(
                 child: Stack(children: [
                   Container(
@@ -170,7 +169,6 @@ class _IdentityStepState extends State<IdentityStep> {
               Center(child: Text('Profil Fotoğrafı Seçin', style: GoogleFonts.outfit(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w600))),
               const SizedBox(height: 20),
 
-              // 2. Kimlik Bilgileri (Her Zaman Açık)
               Column(children: [
                 Row(children: [
                   Expanded(child: TextFormField(controller: widget.firstNameController, decoration: _deco('Ad *', Icons.person),
@@ -240,7 +238,6 @@ class _IdentityStepState extends State<IdentityStep> {
                 textAlign: TextAlign.center),
               const SizedBox(height: 16),
 
-              // 3. E-POSTA VE ŞİFRE (Her Zaman Açık)
               TextFormField(
                 controller: widget.emailController, keyboardType: TextInputType.emailAddress, enabled: !widget.emailVerified,
                 inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
@@ -291,7 +288,6 @@ class _IdentityStepState extends State<IdentityStep> {
               ],
               const SizedBox(height: 14),
 
-              // Şifre Kuralları
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.amber.shade300)),
@@ -321,7 +317,6 @@ class _IdentityStepState extends State<IdentityStep> {
               const SizedBox(height: 24),
 
 
-              // 4. Telefon (Kilitli veya Açık)
               Opacity(
                 opacity: widget.emailVerified ? 1.0 : 0.5,
                 child: AbsorbPointer(

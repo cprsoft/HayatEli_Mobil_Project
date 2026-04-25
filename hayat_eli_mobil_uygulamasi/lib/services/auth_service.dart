@@ -62,7 +62,6 @@ class AuthService {
       return null; 
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
-        
         try {
           final cred = await auth.signInWithEmailAndPassword(email: email, password: password);
           if (!cred.user!.emailVerified) {
@@ -79,6 +78,7 @@ class AuthService {
       return 'Beklenmeyen bir hata oluştu: $e';
     }
   }
+
   Future<String?> signInWithEmail({
     required String email,
     required String password,
@@ -91,14 +91,14 @@ class AuthService {
         return 'E-posta adresiniz henüz doğrulanmamış.\n'
             'Lütfen e-posta kutunuzu kontrol edin ve doğrulama linkine tıklayın.';
       }
-
       return null;
     } on FirebaseAuthException catch (e) {
       return _handleAuthError(e);
     } catch (e) {
-      return 'Beklenmeyen bir hata oluştu: \$e';
+      return 'Beklenmeyen bir hata oluştu: $e';
     }
   }
+
   Future<String?> sendPhoneOtp({
     required String phoneNumber,
     required Function(String verificationId) onCodeSent,
@@ -127,6 +127,7 @@ class AuthService {
       return 'SMS gönderilemedi: $e';
     }
   }
+
   Future<String?> verifyPhoneOtp({
     required String smsCode,
     String? verificationId,
@@ -173,7 +174,7 @@ class AuthService {
       return null;
     } on FirebaseAuthException catch (e) {
       if (e.code == 'provider-already-linked') {
-        return null; 
+        return null;
       }
       if (e.code == 'credential-already-in-use') {
         return 'Bu e-posta adresi başka bir hesap tarafından kullanılıyor.';
@@ -207,18 +208,15 @@ class AuthService {
             .collection('users')
             .where('email', isEqualTo: email)
             .get();
-        
         for (var doc in emailQuery.docs) {
           if (doc.id != excludeUid) return 'Lütfen kendi e-posta adresinizi girin.';
         }
       }
-
       if (phone != null) {
         final phoneQuery = await firestore
             .collection('users')
             .where('phone', isEqualTo: phone)
             .get();
-        
         for (var doc in phoneQuery.docs) {
           if (doc.id != excludeUid) return 'Lütfen kendi telefon numaranızı girin.';
         }
@@ -228,11 +226,11 @@ class AuthService {
       return 'Kullanım kontrolü sırasında hata: $e';
     }
   }
+
   Future<String?> reauthenticate(String password) async {
     try {
       final user = auth.currentUser;
       if (user == null || user.email == null) return 'Oturum bulunamadı.';
-      
       final credential = EmailAuthProvider.credential(email: user.email!, password: password);
       await user.reauthenticateWithCredential(credential);
       return null;
@@ -243,6 +241,7 @@ class AuthService {
       return 'Doğrulama hatası: $e';
     }
   }
+
   Future<String?> updateAuthEmail(String newEmail) async {
     try {
       final user = auth.currentUser;
@@ -258,12 +257,12 @@ class AuthService {
       return 'Auth e-posta güncelleme hatası: $e';
     }
   }
+
   Future<String?> updateAuthPhone(PhoneAuthCredential credential) async {
     try {
       final user = auth.currentUser;
       if (user == null) return 'Oturum bulunamadı.';
       bool hasPhone = user.providerData.any((p) => p.providerId == 'phone');
-      
       if (hasPhone) {
         await user.updatePhoneNumber(credential);
       } else {
@@ -285,7 +284,7 @@ class AuthService {
       await auth.currentUser?.sendEmailVerification();
       return null;
     } catch (e) {
-      return 'Doğrulama maili gönderilemedi: \$e';
+      return 'Doğrulama maili gönderilemedi: $e';
     }
   }
 
@@ -311,7 +310,7 @@ class AuthService {
     if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(password)) {
       return 'Şifre en az 1 özel karakter içermelidir (!@#\$% vb.)';
     }
-    return null; 
+    return null;
   }
 
   String? _handleAuthError(FirebaseAuthException e) {
@@ -344,20 +343,16 @@ class AuthService {
       final random = Random();
       final otpCode = (100000 + random.nextInt(900000)).toString();
       final expiresAt = DateTime.now().add(const Duration(minutes: 5));
-      
       await firestore.collection('temp_verifications').doc(email).set({
         'code': otpCode,
         'expiresAt': expiresAt.toIso8601String(),
       });
-
       final success = await emailService.sendEmailOtp(
         email: email,
         otpCode: otpCode,
       );
-
       if (!success) return 'E-posta servisi şu an kullanılamıyor.';
-
-      return null; 
+      return null;
     } catch (e) {
       return 'E-posta kodu gönderilemedi: $e';
     }
@@ -367,21 +362,17 @@ class AuthService {
     try {
       final doc = await firestore.collection('temp_verifications').doc(email).get();
       if (!doc.exists) return false;
-
       final data = doc.data()!;
       final correctCode = data['code'] as String;
       final expiresAt = DateTime.parse(data['expiresAt'] as String);
-
       if (DateTime.now().isAfter(expiresAt)) {
         await firestore.collection('temp_verifications').doc(email).delete();
         return false;
       }
-
       if (correctCode == code) {
         await firestore.collection('temp_verifications').doc(email).delete();
         return true;
       }
-      
       return false;
     } catch (e) {
       return false;
@@ -403,12 +394,10 @@ class AuthService {
           .child('users')
           .child(uid)
           .child('profile.jpg');
-
       final uploadTask = await ref.putFile(
         imageFile,
         SettableMetadata(contentType: 'image/jpeg'),
       );
-
       return await uploadTask.ref.getDownloadURL();
     } catch (e) {
       return null;

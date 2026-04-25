@@ -3,23 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-/// Google Cloud Text-to-Speech API servisi.
-/// Türkçe WaveNet ve Chirp3-HD sesleri kullanır.
 class CloudTtsService {
   static final String _apiKey = dotenv.env['GOOGLE_MAPS_KEY'] ?? '';
   static const String _apiUrl =
       'https://texttospeech.googleapis.com/v1/text:synthesize';
 
-  /// ─── Mevcut Türkçe Sesler ───────────────────────────────────────────────
-  /// Chirp3-HD: En doğal, insan sesine en yakın (ücretli tier)
-  /// WaveNet:   Doğal, sinir ağı bazlı (ücretsiz kota daha geniş)
-  /// Standard:  Temel TTS (en robot)
   static const List<Map<String, dynamic>> femaleVoices = [
     {
       'id': 'tr-TR-Chirp3-HD-Zuhal',
       'name': 'Zuhal',
       'quality': 'Chirp3 HD',
-      'description': 'En doğal, samimi kadın sesi ⭐',
+      'description': 'En doğal, samimi kadın sesi',
       'languageCode': 'tr-TR',
       'isDefault': true,
     },
@@ -62,7 +56,7 @@ class CloudTtsService {
       'id': 'tr-TR-Chirp3-HD-Fenrir',
       'name': 'Fenrir',
       'quality': 'Chirp3 HD',
-      'description': 'Güçlü, doğal erkek sesi ⭐',
+      'description': 'Güçlü, doğal erkek sesi',
       'languageCode': 'tr-TR',
       'isDefault': true,
     },
@@ -103,7 +97,6 @@ class CloudTtsService {
   static const String defaultFemaleVoiceId = 'tr-TR-Chirp3-HD-Zuhal';
   static const String defaultMaleVoiceId = 'tr-TR-Chirp3-HD-Fenrir';
 
-  /// VoiceId'e göre ses bilgisini döner
   static Map<String, dynamic>? getVoiceById(String id) {
     final all = [...femaleVoices, ...maleVoices];
     try {
@@ -113,7 +106,6 @@ class CloudTtsService {
     }
   }
 
-  /// Metni sese çevirir, MP3 bytes döner (null → hata)
   static Future<Uint8List?> synthesize(
     String text, {
     String voiceId = defaultFemaleVoiceId,
@@ -142,7 +134,7 @@ class CloudTtsService {
               },
             }),
           )
-          .timeout(const Duration(seconds: 8)); // 8 saniye ideal bir sınır
+          .timeout(const Duration(seconds: 8)); 
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -152,7 +144,6 @@ class CloudTtsService {
         }
       } else {
         debugPrint('[CloudTTS] HTTP ${response.statusCode}: ${response.body}');
-        // Chirp3-HD desteklenmiyorsa WaveNet'e düş
         if (response.statusCode == 400 && voiceId.contains('Chirp3')) {
           final fallbackId = voiceId.contains('Fenrir') ||
                   voiceId.contains('Charon') ||
@@ -165,7 +156,6 @@ class CloudTtsService {
       }
     } catch (e) {
       debugPrint('[CloudTTS] Error/Timeout: $e');
-      // Timeout veya başka bir hatada hemen WaveNet'e düş (Sessiz kalma!)
       if (voiceId.contains('Chirp3')) {
         final fallbackId = voiceId.contains('Fenrir') || voiceId.contains('Charon') || voiceId.contains('Puck')
             ? 'tr-TR-Wavenet-B'

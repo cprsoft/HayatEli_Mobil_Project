@@ -39,7 +39,6 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
       curve: Curves.easeIn,
     );
 
-   
     _scaleController.forward().then((_) => _fadeController.forward());
   }
 
@@ -68,7 +67,6 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                
                   ScaleTransition(
                     scale: _scaleAnimation,
                     child: Container(
@@ -124,7 +122,6 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
 
                         const SizedBox(height: 48),
 
-                        // Uygulamaya Git Butonu
                         SizedBox(
                           width: double.infinity,
                           height: 58,

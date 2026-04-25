@@ -18,14 +18,12 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _chronicDiseasesController;
   late TextEditingController _allergiesController;
   late TextEditingController _currentMedicationsController;
 
-  // Telefon alan kodu
   String _selectedCountryCode = '+90';
   bool _isInit = false;
 
@@ -109,7 +107,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
-  // E-Posta OTP Dialog
   void _showEmailOtpDialog() {
     String otpCode = '';
     showDialog(
@@ -133,7 +130,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 decoration: const InputDecoration(counterText: "", hintText: "000000", hintStyle: TextStyle(color: Colors.black26)),
               ),
               const SizedBox(height: 10),
-              Consumer(
                 builder: (ctx, ref, _) {
                   final s = ref.watch(profileControllerProvider);
                   return Column(
@@ -187,7 +183,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  // Telefon OTP Dialog
   void _showPhoneOtpDialog() {
     String otpCode = '';
     showDialog(
@@ -257,14 +252,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  // Acil durum kişisi ekleme/düzenleme dialog
   void _showEmergencyContactDialog({int? index, EmergencyContact? existing}) {
     String name = existing?.name ?? '';
     String rawPhone = existing?.phone ?? '';
     String dialCode = '+90';
     String phone = rawPhone;
     
-    // Alan kodunu ayıkla
     for (final c in Validators.dialCodes) {
       if (rawPhone.startsWith(c['code']!)) {
         dialCode = c['code']!;
@@ -290,7 +283,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Kişi Fotoğrafı
                 Center(
                   child: Stack(
                     children: [
@@ -388,9 +380,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('İptal')),
             ElevatedButton(
               onPressed: () async {
-                // Doğrulama
-                final nameErr = Validators.validateName(name, fieldName: 'İsim');
-                // Telefon doğrulama
                 final phoneErr = Validators.validatePhone(phone, dialCode: dialCode);
                 
                 if (nameErr != null || phoneErr != null) {
@@ -398,7 +387,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   return;
                 }
 
-                // Fotoğraf varsa yükle
                 String? finalPhotoUrl = photoUrl;
                 if (localImage != null) {
                   final uploadedUrl = await ref.read(profileControllerProvider.notifier).uploadContactPicture(localImage!, name);
@@ -429,7 +417,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  // Şifre doğrulama diyaloğu
   void _showPasswordDialog() {
     String pwd = '';
     showDialog(
@@ -504,7 +491,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ... profil stack ...
               Center(
                 child: Stack(
                   children: [
@@ -534,7 +520,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               _sectionHeader('İLETİŞİM BİLGİLERİ'),
               
-              // E-Posta
               _card(Row(
                 children: [
                   Expanded(
@@ -549,7 +534,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ],
               )),
 
-              // Telefon
               _card(Row(
                 children: [
                   DropdownButton<String>(

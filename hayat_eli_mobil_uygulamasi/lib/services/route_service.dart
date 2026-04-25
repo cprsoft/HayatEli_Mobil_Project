@@ -26,7 +26,6 @@ class RouteService {
     return null;
   }
 
-  /// Alternatif rotaları çeker (Google max 3 seçenek döner)
   Future<List<Map<String, dynamic>>> getAlternativeRoutes(
       LatLng origin, LatLng destination, {String mode = 'driving'}) async {
     final url =
@@ -52,7 +51,7 @@ class RouteService {
       'polyline': polyline,
       'distance': leg['distance']['text'],
       'duration': leg['duration']['text'],
-      'distance_value': leg['distance']['value'] as int, // metre cinsinden
+      'distance_value': leg['distance']['value'] as int, 
       'end_address': leg['end_address'],
       'steps': leg['steps'],
     };
