@@ -1,1 +1,1 @@
-# disk-image-review-tool
+# HayatEli Mobil Uygulaması,İlk yardım anlarında Yapay Zeka Destekli proaktif çözümler sunmak amacıyla hazırlanmış bir projedir.Temel hedef,kısa sürede AI desteğiyle kazazede insanlara müdahale edilerek hayat kurtarmaktır.
