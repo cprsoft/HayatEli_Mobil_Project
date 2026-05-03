@@ -11,6 +11,8 @@ import 'edit_profile_screen.dart';
 import '../services/crash_detection/local_contact_service.dart';
 import 'package:another_telephony/telephony.dart' hide SmsStatus;
 import 'package:send_message/send_message.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'dart:io';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -196,6 +198,52 @@ class ProfileScreen extends ConsumerWidget {
                         Text(
                           "SESSİZ SMS TESTİ (05052219647)",
                           style: GoogleFonts.outfit(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    try {
+                      final FlutterTts tts = FlutterTts();
+                      if (Platform.isAndroid) {
+                        await tts.setEngine("com.google.android.tts");
+                      }
+                      await tts.setLanguage("tr-TR");
+                      await tts.setSpeechRate(0.6);
+                      await tts.setPitch(1.4);
+                      
+                      // Motorun bağlanması için milisaniyelik bir nefes aldırıyoruz
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      
+                      await tts.speak("HayatEli Sesli Asistan testi başarılı. Seni duyabiliyorum amına koyayım!");
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Ses Hatası: $e ❌')),
+                        );
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(15),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.withValues(alpha: 0.1),
+                      border: Border.all(color: Colors.purple.withValues(alpha: 0.3), width: 1.5),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.record_voice_over, color: Colors.purple),
+                        const SizedBox(width: 12),
+                        Text(
+                          "SESLİ ASİSTAN TESTİ",
+                          style: GoogleFonts.outfit(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ],
                     ),

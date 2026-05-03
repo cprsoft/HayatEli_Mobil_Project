@@ -97,7 +97,7 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
       if (mounted) setState(() => _statusText = s);
     });
 
-    if (await _waitAndCheck(15, "112 İhbarı Hazırlanıyor...", announce: "Kaza tespit edildi, iyi misiniz? Acil servise SMS ihbarı yapılacak.")) {
+    if (await _waitAndCheck(15, "112 İhbarı Hazırlanıyor...")) {
       setState(() => _isSosTriggered = true);
       await protocol.runPhase1("HayatEli Kullanıcısı", () => _isCancelled);
 

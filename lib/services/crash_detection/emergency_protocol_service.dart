@@ -4,6 +4,7 @@ import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:another_telephony/telephony.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:io';
 import 'local_contact_service.dart';
 import '../communications/n8n_webhook_service.dart';
 
@@ -27,12 +28,21 @@ class EmergencyProtocolService {
     if (isCancelled()) return;
     try {
       onStatusUpdate("Acil servis ihbarı hazırlanıyor...");
+      if (Platform.isAndroid) {
+        await _tts.setEngine("com.google.android.tts");
+      }
+      await _tts.setLanguage("tr-TR");
+      await _tts.setSpeechRate(0.6);
+      await _tts.setPitch(1.4);
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _tts.speak("Kaza algılandı, İyi misiniz? Acil yardım talebi yüzonikiye iletiliyor.");
+      
       _currentPosition = await _getLocationSafely();
       final mapsUrl = _currentPosition != null 
           ? "https://www.google.com/maps?q=${_currentPosition!.latitude},${_currentPosition!.longitude}"
           : "Konum tespiti başarısız.";
       
-      final msg = "ACİL DURUM (HAYATELİ TEST): $userName kaza geçirmiştir. Tür: Araç Kazası. Konum: $mapsUrl Detay: (Yaralı durumu bilinmiyor)";
+      final msg = "ACİL DURUM : $userName kaza geçirmiştir. Tür: Araç Kazası. Konum: $mapsUrl Detay: (Yaralı durumu bilinmiyor)";
       
       await _sendSmsToNumber(_targetNumber, msg).timeout(const Duration(seconds: 5), onTimeout: () {});
     } catch (_) { onStatusUpdate("Faz 1 tamamlandı..."); }
@@ -42,6 +52,9 @@ class EmergencyProtocolService {
     if (isCancelled()) return;
     try {
       onStatusUpdate("Yakınlarınıza haber veriliyor...");
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _tts.speak("Durumunuz yakınlarınıza mesaj olarak gönderiliyor.");
+      
       final contacts = await LocalContactService.getContacts();
       
       final mapsUrl = _currentPosition != null 
@@ -54,7 +67,7 @@ class EmergencyProtocolService {
             .timeout(const Duration(seconds: 3), onTimeout: () => false);
       }
 
-      final msg = "ACİL DURUM (HAYATELİ): Yakınınız $userName kaza geçirmiştir. Konum: $mapsUrl";
+      final msg = "ACİL DURUM : Yakınınız $userName kaza geçirmiştir. Konum: $mapsUrl";
 
       for (var phone in contacts) {
         if (isCancelled()) return;
@@ -67,8 +80,11 @@ class EmergencyProtocolService {
     if (isCancelled()) return;
     try {
       onStatusUpdate("Acil servis aranıyor...");
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _tts.speak("Yüzonikiye arama başlatılıyor.");
+      await Future.delayed(const Duration(seconds: 2));
       await _callEmergency().timeout(const Duration(seconds: 5), onTimeout: () {});
-    } catch (_) { onStatusUpdate("Arama başlatıldı..."); }
+    } catch (_) { onStatusUpdate("Faz 3 tamamlandı..."); }
   }
 
   Future<void> _sendSmsToNumber(String number, String body) async {
