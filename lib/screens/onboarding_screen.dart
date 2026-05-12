@@ -35,7 +35,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
 
     _controller.forward();
     
-    // Uygulama açıldığında tüm hayati izinleri (SMS, Konum, Telefon) peşin iste
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppPermissionManager.requestInitialPermissions(context);
     });
@@ -44,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    precacheImage(const AssetImage('lib/assets/images/giris-yap-kapak.jpg'), context);
+    precacheImage(const ResizeImage(AssetImage('lib/assets/images/giris-yap-kapak.jpg'), width: 720), context);
   }
 
   @override
@@ -77,7 +76,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
               children: [
                 const Spacer(flex: 2),
                 
-                // İkon ve Başlık Alanı
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: Column(
@@ -120,7 +118,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                 
                 const Spacer(flex: 2),
 
-                // Butonlar Alanı
                 SlideTransition(
                   position: _slideAnimation,
                   child: FadeTransition(
@@ -128,7 +125,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Giriş Yap Butonu
                         ElevatedButton(
                           onPressed: () {
                             Navigator.push(
@@ -156,7 +152,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 16),
                         
-                        // Kayıt Ol Butonu
                         OutlinedButton(
                           onPressed: () {
                             Navigator.push(
@@ -183,7 +178,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 32),
                         
-                       
                         TextButton(
                           onPressed: () {
                             Navigator.pushReplacement(

@@ -1,21 +1,40 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
+import 'package:encrypt/encrypt.dart' as enc;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class N8nWebhookService {
-  static const String _n8nWebhookUrl = "http://YOUR_N8N_IP:5678/webhook/sos-alert";
-  static const String _secretKey = "HAYATELI_SECRET_12345";
+  final String _n8nWebhookUrl = dotenv.get('N8N_WEBHOOK_URL', fallback: 'YOK');
+  final String _masterSecret = dotenv.get('MASTER_SECRET', fallback: 'HAYATELI_MASTER_FIX_ME');
 
-  String _generateHourlyToken() {
+  Future<String> _getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final androidInfo = await deviceInfo.androidInfo;
+      return androidInfo.id;
+    } else if (Platform.isIOS) {
+      final iosInfo = await deviceInfo.iosInfo;
+      return iosInfo.identifierForVendor ?? "UNKNOWN_IOS";
+    }
+    return "UNKNOWN_PLATFORM";
+  }
+
+  Future<Map<String, String>> _generateSecurityHeaders() async {
+    final deviceId = await _getDeviceId();
     final now = DateTime.now();
     final hourString = "${now.year}-${now.month}-${now.day}-${now.hour}";
-    final keyBytes = utf8.encode(_secretKey);
+    final derivedKey = sha256.convert(utf8.encode(_masterSecret + deviceId)).toString();
+    final keyBytes = utf8.encode(derivedKey);
     final dataBytes = utf8.encode(hourString);
-    
     final hmac = Hmac(sha256, keyBytes);
     final digest = hmac.convert(dataBytes);
-    
-    return digest.toString();
+    return {
+      'Authorization': 'Bearer ${digest.toString()}',
+      'X-Device-ID': deviceId,
+    };
   }
 
   Future<bool> sendSosAlert({
@@ -23,27 +42,27 @@ class N8nWebhookService {
     required String userPhone,
     required String emergencyContact,
     required String sessionId,
-    required String aesKey,
+    required String encryptedData,
+    required String iv,
+    String status = "ACTIVE",
   }) async {
-    final token = _generateHourlyToken();
-    final trackingLink = "https://hayateli.com/track/$sessionId#key=$aesKey";
-
+    if (_n8nWebhookUrl == "YOK") return false;
+    final headers = await _generateSecurityHeaders();
     try {
       final response = await http.post(
         Uri.parse(_n8nWebhookUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
+          ...headers,
         },
         body: jsonEncode({
-          'userName': userName,
-          'userPhone': userPhone,
-          'emergencyContact': emergencyContact,
-          'trackingLink': trackingLink,
+          'sessionId': sessionId,
+          'status': status,
+          'payload': encryptedData,
+          'iv': iv,
           'timestamp': DateTime.now().toIso8601String(),
         }),
       );
-
       return response.statusCode == 200;
     } catch (e) {
       return false;

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HayatEli Canlı Konum Takibi</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+      import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+      window.initializeApp = initializeApp;
+      window.getFirestore = getFirestore;
+      window.doc = doc;
+      window.onSnapshot = onSnapshot;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div id="map"></div>
+
+    <div class="top-nav">
+        <div class="nav-header">
+            <span class="nav-title">HayatEli Canlı Konum Takibi</span>
+            <span class="nav-subtitle" id="lastUpdated">Cihazla Bağlantı Kuruluyor...</span>
+        </div>
+        <div class="alert-banner" id="statusBanner">
+            <div class="loading-spinner" id="loadingIcon"></div>
+            <span id="statusText">Cihazdan Sinyal Bekleniyor</span>
+        </div>
+    </div>
+
+    <div class="bottom-container">
+        
+        <div class="warning-text">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Bu konum, otonom bir şekilde kaza geçiren kişinin telefonundan acil durum protokolü ile gönderildi.
+        </div>
+
+        <div class="info-card">
+            <div class="card-header">Kazazede Bilgileri</div>
+            <div class="card-body">
+                <div class="victim-details">
+                    <h2 id="victimName">-</h2>
+                    <p id="victimPhone">Veri bağlantısı bekleniyor...</p>
+                </div>
+                
+                <div class="metrics-grid-2x2">
+                    <div class="metric">
+                        <div class="metric-icon">⚡</div>
+                        <div class="metric-data">
+                            <span class="label">Şarj Yüzdesi</span>
+                            <span class="val blood-text" id="victimBattery">%--</span>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-icon">⏱️</div>
+                        <div class="metric-data">
+                            <span class="label">Anlık Hız</span>
+                            <span class="val"><span id="victimSpeed" class="blood-text">0</span> <small>km/h</small></span>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-icon">🩸</div>
+                        <div class="metric-data">
+                            <span class="label">Kan Grubu</span>
+                            <span class="val blood-text" id="victimBloodType">-</span>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-icon">🕰️</div>
+                        <div class="metric-data">
+                            <span class="label">Son Sinyal</span>
+                            <span class="val blood-text" id="victimTime">--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-primary ripple-effect" id="startTrackingBtn">
+                Takibe Başla
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

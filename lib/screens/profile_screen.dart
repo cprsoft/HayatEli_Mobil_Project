@@ -11,8 +11,10 @@ import 'edit_profile_screen.dart';
 import '../services/crash_detection/local_contact_service.dart';
 import 'package:another_telephony/telephony.dart' hide SmsStatus;
 import 'package:send_message/send_message.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../services/audio/tts_service.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -104,7 +106,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 _sectionTitle('KİMLİK BİLGİLERİ'),
                 _infoCard([
-                  _infoRow(Icons.badge_outlined, 'T.C. Kimlik', '***********'),
+                  _infoRow(Icons.badge_outlined, 'T.C. Kimlik', profile.tcNo),
                   _infoRow(Icons.calendar_today_outlined, 'Doğum Tarihi', DateFormat('dd.MM.yyyy').format(profile.birthDate)),
                   _infoRow(Icons.wc_outlined, 'Cinsiyet', profile.gender),
                 ]),
@@ -207,18 +209,7 @@ class ProfileScreen extends ConsumerWidget {
                 InkWell(
                   onTap: () async {
                     try {
-                      final FlutterTts tts = FlutterTts();
-                      if (Platform.isAndroid) {
-                        await tts.setEngine("com.google.android.tts");
-                      }
-                      await tts.setLanguage("tr-TR");
-                      await tts.setSpeechRate(0.6);
-                      await tts.setPitch(1.4);
-                      
-                      // Motorun bağlanması için milisaniyelik bir nefes aldırıyoruz
-                      await Future.delayed(const Duration(milliseconds: 500));
-                      
-                      await tts.speak("HayatEli Sesli Asistan testi başarılı. Seni duyabiliyorum amına koyayım!");
+                      await ref.read(ttsServiceProvider).speak("HayatEli Sesli Asistan testi başarılı. Seni duyabiliyorum kral!");
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -249,12 +240,15 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 40),
                 Center(
-                  child: Text(
-                    'HAYATELİ tüm hakları saklıdır.',
-                    style: GoogleFonts.outfit(color: Colors.grey.shade400, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1.5),
+                  child: InkWell(
+                    onLongPress: () => _showHiveDetective(context),
+                    child: Text(
+                      'HAYATELİ tüm hakları saklıdır.\nSürüm: 1.0.5 (Stabilite Güncellemesi)',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.outfit(color: Colors.grey.shade400, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.2),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -335,5 +329,70 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-}
 
+  void _showHiveDetective(BuildContext context) {
+    final userBox = Hive.box('user_box');
+    final profile = userBox.get('cached_user_profile');
+    final address = userBox.get('last_known_address');
+    final contacts = userBox.get('emergency_contacts');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey.shade900,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.psychology_outlined, color: Colors.greenAccent),
+            const SizedBox(width: 10),
+            Text('HIVE DEDEKTİFİ', style: GoogleFonts.outfit(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _debugSection('👤 PROFiL JSON', profile),
+                _debugSection('📍 SON ADRES', address),
+                _debugSection('📞 ACiL KiŞiLER', contacts?.toString()),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('KAPAT', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _debugSection(String title, dynamic value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Text(title, style: GoogleFonts.outfit(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
+        const SizedBox(height: 6),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade800),
+          ),
+          child: SelectableText(
+            value?.toString() ?? 'VERİ YOK (BOŞ)',
+            style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 11, fontFamily: 'monospace', height: 1.4),
+          ),
+        ),
+      ],
+    );
+  }
+}

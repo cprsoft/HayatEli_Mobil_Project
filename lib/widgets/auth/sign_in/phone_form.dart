@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pinput/pinput.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 import '../../../utils/validators.dart';
 import '../shared/auth_input_decoration.dart';
 
@@ -14,6 +16,7 @@ class SignInPhoneForm extends StatelessWidget {
   final int secondsLeft;
   final ValueChanged<String?> onDialCodeChanged;
   final VoidCallback onResetOtp;
+  final VoidCallback onOtpCompleted;
 
   const SignInPhoneForm({
     super.key,
@@ -26,12 +29,30 @@ class SignInPhoneForm extends StatelessWidget {
     required this.secondsLeft,
     required this.onDialCodeChanged,
     required this.onResetOtp,
+    required this.onOtpCompleted,
   });
 
   static const _kRed = Color(0xFFE53935);
 
+  String _formatTime(int seconds) {
+    final int minutes = seconds ~/ 60;
+    final int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final defaultPinTheme = PinTheme(
+      width: 48,
+      height: 52,
+      textStyle: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: _kRed),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+    );
+
     return Form(
       key: formKey,
       child: Column(
@@ -78,14 +99,14 @@ class SignInPhoneForm extends StatelessWidget {
           ),
 
           if (otpSent) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 24),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: otpExpired ? Colors.red.shade50 : (secondsLeft <= 15 ? Colors.orange.shade50 : Colors.green.shade50),
-                borderRadius: BorderRadius.circular(10),
+                color: otpExpired ? Colors.red.shade50 : Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: otpExpired ? Colors.red.shade300 : (secondsLeft <= 15 ? Colors.orange.shade300 : Colors.green.shade300),
+                  color: otpExpired ? Colors.red.shade200 : Colors.blue.shade200,
                 ),
               ),
               child: Row(
@@ -94,42 +115,64 @@ class SignInPhoneForm extends StatelessWidget {
                   Row(children: [
                     Icon(
                       otpExpired ? Icons.timer_off : Icons.timer_outlined,
-                      size: 16,
-                      color: otpExpired ? Colors.red.shade700 : (secondsLeft <= 15 ? Colors.orange.shade700 : Colors.green.shade700),
+                      size: 18,
+                      color: otpExpired ? Colors.red.shade700 : Colors.blue.shade700,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Text(
-                      otpExpired ? 'Kodun süresi doldu' : 'Kalan süre: $secondsLeft sn',
+                      otpExpired ? 'Kodun süresi doldu' : 'Kalan süre: ${_formatTime(secondsLeft)}',
                       style: GoogleFonts.outfit(
-                        color: otpExpired ? Colors.red.shade700 : (secondsLeft <= 15 ? Colors.orange.shade700 : Colors.green.shade700),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                        color: otpExpired ? Colors.red.shade700 : Colors.blue.shade700,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
                       ),
                     ),
                   ]),
                   if (otpExpired)
                     GestureDetector(
                       onTap: onResetOtp,
-                      child: Text(
-                        'Tekrar Gönder',
-                        style: GoogleFonts.outfit(color: _kRed, fontWeight: FontWeight.w800, fontSize: 13, decoration: TextDecoration.underline, decorationColor: _kRed),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _kRed,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'YENİLE',
+                          style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                        ),
                       ),
                     ),
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            TextFormField(
+            const SizedBox(height: 24),
+            Pinput(
+              length: 6,
               controller: otpController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              enabled: !otpExpired,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: authInputDecoration('6 Haneli SMS Kodu', Icons.sms_outlined),
+              onCompleted: (_) => onOtpCompleted(),
+              defaultPinTheme: defaultPinTheme,
+              focusedPinTheme: defaultPinTheme.copyWith(
+                decoration: defaultPinTheme.decoration!.copyWith(
+                  border: Border.all(color: _kRed, width: 2),
+                ),
+              ),
+              errorPinTheme: defaultPinTheme.copyWith(
+                decoration: defaultPinTheme.decoration!.copyWith(
+                  border: Border.all(color: Colors.redAccent),
+                ),
+              ),
+
+              onChanged: (code) {
+                if (code.length == 6) {
+                  otpController.text = code;
+                }
+              },
             ),
+            const SizedBox(height: 16),
             TextButton(
               onPressed: onResetOtp,
-              child: Text('Farklı numara kullan', style: GoogleFonts.outfit(color: Colors.grey, fontSize: 12)),
+              child: Text('Farklı numara kullan', style: GoogleFonts.outfit(color: Colors.grey.shade600, fontSize: 13)),
             ),
           ],
         ],

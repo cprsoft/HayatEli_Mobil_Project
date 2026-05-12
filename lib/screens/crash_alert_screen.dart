@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../services/audio/tts_service.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
 import '../services/crash_detection/emergency_protocol_service.dart';
 
 class CrashAlertScreen extends ConsumerStatefulWidget {
@@ -20,17 +22,19 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
   bool _isCancelled = false;
   bool _isProtocolFinished = false;
   bool _skipWait = false;
+  bool _isForBystander = false;
   String _statusText = "Kaza Algılandı!";
   int _countdownSeconds = 10;
+  String _userName = "HayatEli Kullanıcısı";
   
   late AnimationController _animationController;
   late Animation<Color?> _colorAnimation;
   final AudioPlayer _sirenPlayer = AudioPlayer();
-  final FlutterTts _tts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
+    _loadUserName();
     _startVibration();
     _startSirenImmediately();
     
@@ -48,18 +52,33 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
     _startPhasedProtocol();
   }
 
+  Future<void> _loadUserName() async {
+    try {
+      final userBox = Hive.box('user_box');
+      final jsonStr = userBox.get('cached_user_profile');
+      if (jsonStr != null) {
+        final data = jsonDecode(jsonStr);
+        String name = data['fullName'] ?? 
+                     "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".trim();
+        
+        if (name.isEmpty || name == "null null") name = "HayatEli Kullanıcısı";
+
+        if (mounted) {
+          setState(() => _userName = name);
+        }
+      }
+    } catch (_) {}
+  }
+
   Future<void> _quickStartTts() async {
     try {
-      await _tts.stop();
-      _tts.setLanguage("tr-TR");
-      await _tts.setSpeechRate(0.6);
-      await _tts.setPitch(1.4);
-      await _tts.setVolume(1.0);
-      
+      await ref.read(ttsServiceProvider).stop();
+      VolumeController.instance.showSystemUI = false;
       VolumeController.instance.setVolume(1.0);
-      
-      await Future.delayed(const Duration(milliseconds: 300));
-    } catch (_) {}
+      await ref.read(ttsServiceProvider).speak("İyi misiniz? Kaza yaptığınız tespit edildi. Eğer on saniye içinde iptal etmezseniz acil durum protokolü başlatılacak.");
+    } catch (e) {
+      debugPrint("TTS ERROR: $e");
+    }
   }
 
   void _startVibration() {
@@ -76,37 +95,25 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
     } catch (_) {}
   }
 
-  Future<void> _initTtsAndAmbiance() async {
-    try {
-      await _tts.setLanguage("tr-TR");
-      await _tts.setSpeechRate(0.6);
-      await _tts.setPitch(1.4);
-      await _tts.setVolume(1.0);
-      VolumeController.instance.showSystemUI = false;
-      VolumeController.instance.setVolume(1.0);
-
-      await Future.delayed(const Duration(milliseconds: 500));
-      await _tts.speak("İyi misiniz? Kaza yaptığınız tespit edildi. Eğer on saniye içinde iptal etmezseniz acil durum protokolü başlatılacak.");
-    } catch (e) {
-      debugPrint("TTS ERROR: $e");
-    }
-  }
-
   Future<void> _startPhasedProtocol() async {
-    final protocol = EmergencyProtocolService(_tts, onStatusUpdate: (s) {
+    final protocol = EmergencyProtocolService(ref.read(ttsServiceProvider), onStatusUpdate: (s) {
       if (mounted) setState(() => _statusText = s);
     });
 
+    protocol.startLocationFetch();
+
     if (await _waitAndCheck(15, "112 İhbarı Hazırlanıyor...")) {
       setState(() => _isSosTriggered = true);
-      await protocol.runPhase1("HayatEli Kullanıcısı", () => _isCancelled);
-
-      if (await _waitAndCheck(5, "Yakınlara Haber Veriliyor...", announce: "Yakınlarınıza haber veriliyor.")) {
-        await protocol.runPhase2("HayatEli Kullanıcısı", () => _isCancelled);
-
-        if (await _waitAndCheck(10, "Acil Servis Aranıyor...", announce: "Acil servis aranıyor.")) {
-          await protocol.runPhase3(() => _isCancelled);
+      
+      if (!_isForBystander) {
+        await protocol.runPhase1(_userName, () => _isCancelled);
+        if (await _waitAndCheck(5, "Yakınlara Haber Veriliyor...", announce: "Yakınlarınıza haber veriliyor.")) {
+          await protocol.runPhase2(_userName, () => _isCancelled);
         }
+      }
+
+      if (await _waitAndCheck(10, "Acil Servis Aranıyor...", announce: "Acil servis aranıyor.")) {
+        await protocol.runPhase3(() => _isCancelled);
       }
     }
     
@@ -130,50 +137,55 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
     }
   }
 
-  Future<bool> _waitAndCheck(int seconds, String status, {String? announce}) async {
+  Future<bool> _waitAndCheck(int seconds, String message, {String? announce}) async {
     if (_isCancelled) return false;
-    if (_skipWait) {
-      setState(() => _skipWait = false);
-      return true;
-    }
-    
-    if (announce != null) {
-      _tts.speak(announce).catchError((e) => debugPrint("TTS Error: $e"));
-    }
-    
     setState(() {
-      _statusText = status;
+      _statusText = message;
       _countdownSeconds = seconds;
     });
 
-    for (int i = seconds; i >= 0; i--) {
+    for (int i = seconds; i > 0; i--) {
       if (_isCancelled) return false;
-      if (_skipWait) {
-        setState(() => _skipWait = false);
-        return true;
+      if (_skipWait) break;
+      if (announce != null && i == seconds) {
+        await ref.read(ttsServiceProvider).speak(announce);
       }
-      setState(() => _countdownSeconds = i);
+      setState(() {
+        _statusText = "$message (${i}s)";
+        _countdownSeconds = i;
+      });
       await Future.delayed(const Duration(seconds: 1));
     }
-    return !_isCancelled;
+    if (mounted) setState(() => _countdownSeconds = 0);
+    _skipWait = false;
+    return true;
   }
 
-  void _cancelAlert() async {
-    _isCancelled = true;
-    _timer?.cancel();
-    try { await _sirenPlayer.stop(); } catch (_) {}
-    try { await _tts.stop(); } catch (_) {}
+  bool _isClosing = false;
+
+  Future<void> _cancelAlert() async {
+    if (_isClosing || !mounted) return;
+    _isClosing = true;
+    
+    setState(() {
+      _isCancelled = true;
+      _statusText = "İptal Edildi";
+    });
+    try { await ref.read(ttsServiceProvider).stop(); } catch (_) {}
+    _sirenPlayer.stop();
     Vibration.cancel();
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _animationController.dispose();
     _sirenPlayer.dispose();
-    _tts.stop();
-    Vibration.cancel();
+    _animationController.dispose();
+    ref.read(ttsServiceProvider).stop();
+    VolumeController.instance.showSystemUI = true;
     super.dispose();
   }
 
@@ -194,13 +206,13 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
                   children: [
                     const Spacer(),
                     Text(
-                      _isProtocolFinished ? "Yardım İsteği\nGönderildi" : (_isSosTriggered ? "Acil Durum\nProtokolü Aktif" : "Kaza yaptığınız\ntespit edildi."),
+                      _isProtocolFinished ? "Yardım İsteği\n" + (_isForBystander ? "Gönderildi" : "Gönderildi") : (_isSosTriggered ? "Acil Durum\nProtokolü Aktif" : "Kaza yaptığınız\ntespit edildi."),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w800, height: 1.2),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      _isSosTriggered ? _statusText : "Yanıt vermezseniz cihazınız\nAcil Durum Protokolü'nü başlatacak.",
+                      _isSosTriggered ? _statusText : (_isForBystander ? "Başkası için yardım modu aktif." : "Yanıt vermezseniz cihazınız\nAcil Durum Protokolü'nü başlatacak."),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.4),
                     ),
@@ -215,6 +227,20 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
                         child: const Text("EKRANI KAPAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       )
                     else ...[
+                      if (!_isSosTriggered && !_isForBystander)
+                        OutlinedButton(
+                          onPressed: () async {
+                            setState(() {
+                              _isForBystander = true;
+                              _skipWait = true; // Beklemeyi atla, direkt protokolü başlat
+                              _isSosTriggered = true;
+                            });
+                            await ref.read(ttsServiceProvider).speak("Başkası için yardım modu aktif. Hemen acil servisi arıyorum.");
+                          },
+                          style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white30), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+                          child: const Text("BAŞKASI İÇİN YARDIM ÇAĞIR"),
+                        ),
+                      const SizedBox(height: 20),
                       if (!_isSosTriggered)
                         GestureDetector(
                           onTap: _triggerEmergency,

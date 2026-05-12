@@ -4,8 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
 import '../../models/user_model.dart';
 import '../communications/email_service.dart';
+import 'package:flutter/foundation.dart';
 
 final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseAuth.instance.authStateChanges();
@@ -21,6 +24,8 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 final userProfileProvider = StreamProvider<UserModel?>((ref) {
   final authState = ref.watch(authStateProvider);
+  final authService = ref.read(authServiceProvider);
+  
   return authState.when(
     data: (user) {
       if (user == null) return Stream.value(null);
@@ -28,9 +33,15 @@ final userProfileProvider = StreamProvider<UserModel?>((ref) {
           .collection('users')
           .doc(user.uid)
           .snapshots()
-          .map((doc) {
+          .asyncMap((doc) async {
         if (!doc.exists) return null;
-        return UserModel.fromMap(doc.data()!);
+        final userModel = UserModel.fromMap(doc.data()!);
+        
+        // OTONOM KAYIT: Zaten çalışan fonksiyonu her veri geldiğinde tetikle
+        await authService.saveUserProfile(userModel);
+        debugPrint("📋 OTONOM HIVE GÜNCELLENDİ: ${userModel.fullName}");
+        
+        return userModel;
       });
     },
     loading: () => Stream.value(null),
@@ -120,7 +131,7 @@ class AuthService {
         codeAutoRetrievalTimeout: (String verificationId) {
           _verificationId = verificationId;
         },
-        timeout: const Duration(seconds: 60),
+        timeout: const Duration(seconds: 90),
       );
       return null;
     } catch (e) {
@@ -191,6 +202,16 @@ class AuthService {
           .collection('users')
           .doc(userModel.uid)
           .set(userModel.toMap());
+      
+      final userBox = Hive.box('user_box');
+      final jsonData = jsonEncode(userModel.toMap(), toEncodable: (nonEncodable) {
+        if (nonEncodable is Timestamp) {
+          return nonEncodable.toDate().toIso8601String();
+        }
+        return nonEncodable;
+      });
+      await userBox.put('cached_user_profile', jsonData);
+      
       return null;
     } catch (e) {
       return 'Profil kaydedilemedi: $e';

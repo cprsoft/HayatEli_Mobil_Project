@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 const _lastAddressKey = 'last_known_address';
 
@@ -51,9 +51,9 @@ class LocationNotifier extends Notifier<LocationState> {
       _positionStreamSubscription?.cancel();
     });
 
-    _loadLastKnownAddress();
-
-    _determinePosition();
+    final userBox = Hive.box('user_box');
+    final saved = userBox.get(_lastAddressKey);
+    final lastAddress = (saved != null && saved is String) ? saved : null;
 
     if (!kIsWeb) {
       _serviceStatusStreamSubscription = Geolocator.getServiceStatusStream().listen((ServiceStatus status) {
@@ -61,29 +61,32 @@ class LocationNotifier extends Notifier<LocationState> {
           state = state.copyWith(needsLocationPermission: false, clearError: true);
           _determinePosition();
         } else {
-          state = state.copyWith(
-            isLoading: false,
-            needsLocationPermission: true,
-          );
+          state = state.copyWith(isLoading: false, needsLocationPermission: true);
           _positionStreamSubscription?.cancel();
         }
       });
     }
 
-    return LocationState(isLoading: false);
+    Future.microtask(() => _determinePosition());
+
+    return LocationState(
+      isLoading: true, 
+      lastKnownAddress: lastAddress,
+      address: lastAddress, 
+    );
   }
 
   Future<void> _loadLastKnownAddress() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_lastAddressKey);
-    if (saved != null && saved.isNotEmpty) {
+    final userBox = Hive.box('user_box');
+    final saved = userBox.get(_lastAddressKey);
+    if (saved != null && saved is String && saved.isNotEmpty) {
       state = state.copyWith(lastKnownAddress: saved);
     }
   }
 
   Future<void> _saveLastKnownAddress(String address) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_lastAddressKey, address);
+    final userBox = Hive.box('user_box');
+    await userBox.put(_lastAddressKey, address);
   }
 
   Future<void> refreshLocation() async {
@@ -129,7 +132,7 @@ class LocationNotifier extends Notifier<LocationState> {
     _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
       (Position position) => _processPosition(position),
       onError: (e) {
-        state = state.copyWith(isLoading: false, error: 'Canlı konum alınırken hata.');
+        state = state.copyWith(isLoading: false, error: 'Canlı konum hatası.');
       },
     );
 
@@ -138,17 +141,17 @@ class LocationNotifier extends Notifier<LocationState> {
         desiredAccuracy: LocationAccuracy.best,
         timeLimit: const Duration(seconds: 10),
       );
-      if (state.address == null) {
-        await _processPosition(initial);
-      }
+      await _processPosition(initial);
     } catch (_) {
-      // Eğer tek atış başarısız olursa, stream devralacaktır, o yüzden sessizce geç
+      state = state.copyWith(isLoading: false);
     }
   }
 
   Future<void> _processPosition(Position position) async {
     try {
-      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      final placemarks = await placemarkFromCoordinates(position.latitude, position.longitude)
+          .timeout(const Duration(seconds: 5));
+          
       if (placemarks.isNotEmpty) {
         final place = placemarks[0];
         final parts = <String>[];
@@ -156,11 +159,8 @@ class LocationNotifier extends Notifier<LocationState> {
         if (place.subLocality?.isNotEmpty == true && place.subLocality != place.street) parts.add(place.subLocality!);
         if (place.subAdministrativeArea?.isNotEmpty == true) parts.add(place.subAdministrativeArea!);
         if (place.administrativeArea?.isNotEmpty == true) parts.add(place.administrativeArea!);
-        if (place.postalCode?.isNotEmpty == true) parts.add(place.postalCode!);
-        if (place.country?.isNotEmpty == true) parts.add(place.country!);
 
         final formattedAddress = parts.join(', ');
-
         await _saveLastKnownAddress(formattedAddress);
 
         state = state.copyWith(
@@ -171,7 +171,11 @@ class LocationNotifier extends Notifier<LocationState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Adres çözülemedi.');
+      state = state.copyWith(
+        isLoading: false, 
+        address: "${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}",
+        clearError: true
+      );
     }
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../controllers/sign_in_controller.dart';
 import '../services/auth/auth_service.dart';
 import '../utils/validators.dart';
@@ -48,6 +47,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const ResizeImage(AssetImage('lib/assets/images/giris-yap-kapak.jpg'), width: 720), context);
+  }
+
+  @override
   void dispose() {
     _tabController.dispose();
     _emailController.dispose();
@@ -67,14 +72,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
 
   Future<void> _handleEmailAction() async {
     final controller = ref.read(signInControllerProvider.notifier);
-    
     if (!_emailFormKey.currentState!.validate()) return;
-    
     final success = await controller.signInWithEmail(
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
     if (success) _navigateToHome();
   }
 
@@ -119,7 +121,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
         width: MediaQuery.sizeOf(context).width,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('lib/assets/images/giris-yap-kapak.jpg'),
+            image: ResizeImage(AssetImage('lib/assets/images/giris-yap-kapak.jpg'), width: 720),
             fit: BoxFit.cover,
             alignment: Alignment.topCenter, 
           ),
@@ -196,6 +198,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> with SingleTickerPr
                                         authController.resetPhoneOtpState();
                                         _otpController.clear();
                                       },
+                                      onOtpCompleted: () => _handlePhoneAction(),
                                     ),
                             ),
                             if (authState.errorMessage != null) ...[

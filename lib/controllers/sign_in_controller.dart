@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../services/auth/auth_service.dart';
 import '../services/communications/email_service.dart';
+import 'package:sms_autofill/sms_autofill.dart';
 
 class SignInState {
   final bool isLoading;
@@ -122,8 +123,9 @@ class SignInController extends Notifier<SignInState> {
       phoneNumber: phoneNumber,
       onCodeSent: (verificationId) {
         _verificationId = verificationId;
-        state = state.copyWith(isLoading: false, isPhoneOtpSent: true, phoneSecondsLeft: 60, isPhoneOtpExpired: false);
+        state = state.copyWith(isLoading: false, isPhoneOtpSent: true, phoneSecondsLeft: 90, isPhoneOtpExpired: false);
         _startPhoneTimer();
+        SmsAutoFill().listenForCode();
       },
       onError: (err) {
         state = state.copyWith(isLoading: false, errorMessage: err);
@@ -134,7 +136,7 @@ class SignInController extends Notifier<SignInState> {
       state = state.copyWith(isLoading: false, errorMessage: error);
       return false;
     }
-    return true; // İşlem başlatıldı, onCodeSent bekleniyor
+    return true;
   }
 
   Future<bool> verifyPhoneOtp(String smsCode) async {
@@ -178,7 +180,7 @@ class SignInController extends Notifier<SignInState> {
 
   void resetPhoneOtpState() {
     _phoneTimer?.cancel();
-    state = state.copyWith(isPhoneOtpSent: false, isPhoneOtpExpired: false, phoneSecondsLeft: 60, clearError: true);
+    state = state.copyWith(isPhoneOtpSent: false, isPhoneOtpExpired: false, phoneSecondsLeft: 90, clearError: true);
     _verificationId = null;
   }
 }
