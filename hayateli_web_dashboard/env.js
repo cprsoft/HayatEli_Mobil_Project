@@ -1,6 +1,6 @@
 // Temel Yapılandırma ve Anahtarlar
 export const ENV = {
-    GOOGLE_MAPS_API_KEY: "AIzaSyA0S2aZt3PcdG5KVDRx_gCmGsw2cPx4wfs",
+    GOOGLE_MAPS_API_KEY: "AIzaSyA6tYRwS22f6pkbrwYbajT_yz7bh1DwgLg",
     FIREBASE: {
         apiKey: "AIzaSyD8uQ7eGMSstxhaI7rhhZB8AtRizHbh1As",
         authDomain: "hayateli-c6101.firebaseapp.com",

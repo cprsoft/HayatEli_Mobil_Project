@@ -26,6 +26,7 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
   String _statusText = "Kaza Algılandı!";
   int _countdownSeconds = 10;
   String _userName = "HayatEli Kullanıcısı";
+  EmergencyProtocolService? _protocolService;
   
   late AnimationController _animationController;
   late Animation<Color?> _colorAnimation;
@@ -116,6 +117,8 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
         await protocol.runPhase3(() => _isCancelled);
       }
     }
+    
+    _protocolService = protocol; // Buton için referansı sakla
     
     if (!_isCancelled && mounted) {
       setState(() {
@@ -222,8 +225,18 @@ class _CrashAlertScreenState extends ConsumerState<CrashAlertScreen> with Single
                     const Spacer(),
                     if (_isProtocolFinished)
                       ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.red, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                        onPressed: () async {
+                          if (_protocolService != null && _protocolService!.currentSessionId != null) {
+                            await _protocolService!.finalizeAndStopTracking(_protocolService!.currentSessionId!);
+                          }
+                          if (mounted) Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white, 
+                          foregroundColor: Colors.red, 
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15), 
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))
+                        ),
                         child: const Text("EKRANI KAPAT", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       )
                     else ...[

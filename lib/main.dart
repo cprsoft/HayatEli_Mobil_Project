@@ -10,20 +10,31 @@ import 'firebase_options.dart';
 import 'dart:convert';
 
 import 'screens/onboarding_screen.dart';
+import 'screens/main_scaffold.dart';
 import 'services/audio/tts_service.dart';
 import 'services/auth/auth_service.dart';
+import 'dart:io';
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 void main() async {
+  HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await Hive.initFlutter();
   
   final userBox = await Hive.openBox('user_box');
+  final bool isLoggedIn = userBox.isNotEmpty;
+  
   final container = ProviderContainer();
   
-  container.listen(userProfileProvider, (previous, next) {
-    // Bu dinleyici, provider'ın otonom kayıt mantığını canlı tutar.
-  });
+  container.listen(userProfileProvider, (previous, next) {});
   
   try {
     await container.read(ttsServiceProvider).init();
@@ -47,11 +58,13 @@ void main() async {
     debugPrint("Firebase başlatılamadı: $e");
   }
 
-  runApp(UncontrolledProviderScope(container: container, child: const HayatEliApp()));
+  runApp(UncontrolledProviderScope(container: container, child: HayatEliApp(isLoggedIn: isLoggedIn)));
 }
 
 class HayatEliApp extends StatelessWidget {
-  const HayatEliApp({super.key});
+  final bool isLoggedIn;
+  
+  const HayatEliApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +75,7 @@ class HayatEliApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
         useMaterial3: true,
       ),
-      home: const OnboardingScreen(), 
+      home: isLoggedIn ? const MainScaffold() : const OnboardingScreen(), 
     );
   }
 }

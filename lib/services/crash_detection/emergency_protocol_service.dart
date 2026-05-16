@@ -11,6 +11,8 @@ import 'package:encrypt/encrypt.dart' as enc;
 import 'local_contact_service.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'dart:io';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
 
 class EmergencyProtocolService {
   final TtsService _tts; // Bizim gelişmiş TTS servisi
@@ -19,6 +21,7 @@ class EmergencyProtocolService {
   Timer? _liveTrackingTimer;
   final Battery _battery = Battery();
   bool _isFinalSignalSent = false;
+  String? currentSessionId; // Aktif session ID'yi burada tutuyoruz
 
   static const String _targetNumber = "+905052219647";
   Position? _currentPosition;
@@ -89,10 +92,11 @@ class EmergencyProtocolService {
       String msg;
 
       if (hasInternet) {
-        final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
+        currentSessionId = DateTime.now().millisecondsSinceEpoch.toString();
+        final sessionId = currentSessionId!;
         final key = enc.Key.fromSecureRandom(32);
         final iv = enc.IV.fromSecureRandom(16);
-        final encrypter = enc.Encrypter(enc.AES(key));
+        final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
         final batteryLevel = await _battery.batteryLevel;
         
         final payload = jsonEncode({
@@ -123,13 +127,12 @@ class EmergencyProtocolService {
           contacts: contacts,
           sessionId: sessionId,
           key: key,
-          iv: iv,
           isCancelled: isCancelled,
         );
 
         final keyBase64 = key.base64;
         final ivBase64 = iv.base64;
-        msg = "ACİL DURUM: Yakınınız $finalName kaza geçirmiştir. CANLI TAKİP: https://hayateli.com/live/$sessionId#key=$keyBase64&iv=$ivBase64";
+        msg = "ACİL DURUM: Yakınınız $finalName kaza geçirmiştir. CANLI TAKİP: https://hayateli-c6101.web.app/#id=$sessionId&key=$keyBase64&iv=$ivBase64";
       } else {
         final mapsUrl = _currentPosition != null 
             ? "https://www.google.com/maps?q=${_currentPosition!.latitude},${_currentPosition!.longitude}"
@@ -154,11 +157,17 @@ class EmergencyProtocolService {
       await _tts.speak("Yüzonikiye arama başlatılıyor.");
       await Future.delayed(const Duration(seconds: 2));
       
-      // ESKİ ÇALIŞAN OTONOM ARAMA
       await _callEmergency().timeout(const Duration(seconds: 5), onTimeout: () {});
-    } catch (_) { 
-      onStatusUpdate("Faz 3 tamamlandı..."); 
-    }
+    } catch (_) {}
+  }
+
+  StreamSubscription<Position>? _positionStreamSubscription;
+  DateTime? _lastSendTime;
+  Timer? _heartbeatTimer;
+  bool _isTrackingUpdateActive = false;
+
+  void dispose() {
+    _stopTracking();
   }
 
   void _startLiveTracking({
@@ -167,61 +176,177 @@ class EmergencyProtocolService {
     required List<String> contacts,
     required String sessionId,
     required enc.Key key,
-    required enc.IV iv,
     required bool Function() isCancelled,
   }) {
-    _liveTrackingTimer?.cancel();
-    _liveTrackingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+    _stopTracking();
+    WakelockPlus.enable();
+    _lastSendTime = null;
+
+    final androidSettings = AndroidSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 10,
+      intervalDuration: const Duration(seconds: 15),
+      foregroundNotificationConfig: const ForegroundNotificationConfig(
+        notificationTitle: "HAYATELİ Aktif Takip",
+        notificationText: "Acil durum konumunuz güvenli şekilde iletiliyor...",
+        notificationIcon: AndroidResource(name: 'ic_launcher'),
+        enableWakeLock: true,
+      ),
+    );
+
+    _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: androidSettings)
+        .listen((Position pos) async {
       if (isCancelled()) {
-        timer.cancel();
+        _stopTracking();
         if (!_isFinalSignalSent) {
           _isFinalSignalSent = true;
-          _sendFinalStatus(userName, userData, contacts, sessionId, key, iv, "CANCELLED");
+          _sendFinalStatus(userName, userData, contacts, sessionId, key, "KULLANICI_SONLANDIRDI");
         }
         return;
       }
-      try {
-        final connectivity = await Connectivity().checkConnectivity();
-        if (connectivity.contains(ConnectivityResult.none)) return;
 
-        final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 5),
-        ).catchError((_) => Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low));
+      final now = DateTime.now();
+      if (_lastSendTime != null && now.difference(_lastSendTime!).inSeconds < 12) return;
 
-        final batteryLevel = await _battery.batteryLevel;
-        final encrypter = enc.Encrypter(enc.AES(key));
-        final payload = jsonEncode({
-          'lat': pos.latitude,
-          'lng': pos.longitude,
-          'battery': "%$batteryLevel",
-          'updateType': 'LIVE_STREAM',
-        });
-        final encrypted = encrypter.encrypt(payload, iv: iv);
-        await _n8n.sendSosAlert(
-          userName: userName,
-          userPhone: userData['phone'] ?? "Bilinmiyor",
-          emergencyContact: contacts.join(", "),
-          sessionId: sessionId,
-          encryptedData: encrypted.base64,
-          iv: iv.base64,
-          status: "ACTIVE",
-        ).timeout(const Duration(seconds: 3), onTimeout: () => false);
-      } catch (_) {}
+      await _sendSosPacket(pos, userName, userData, contacts, sessionId, key);
+      _lastSendTime = DateTime.now();
+    }, onError: (e) {
+      Future.delayed(const Duration(seconds: 10), () {
+        if (!isCancelled()) {
+          _startLiveTracking(
+            userName: userName,
+            userData: userData,
+            contacts: contacts,
+            sessionId: sessionId,
+            key: key,
+            isCancelled: isCancelled
+          );
+        }
+      });
+    }, cancelOnError: false);
+
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 60), (timer) async {
+      if (isCancelled()) {
+        _stopTracking();
+        return;
+      }
+      final now = DateTime.now();
+      if (_lastSendTime == null || now.difference(_lastSendTime!).inSeconds >= 60) {
+        final pos = _currentPosition ?? await Geolocator.getLastKnownPosition();
+        if (pos != null) {
+          await _sendSosPacket(pos, userName, userData, contacts, sessionId, key);
+          _lastSendTime = DateTime.now();
+        }
+      }
     });
   }
 
-  Future<void> _sendFinalStatus(String userName, Map<String, dynamic> userData, List<String> contacts, String sessionId, enc.Key key, enc.IV iv, String status) async {
+  Future<void> _sendSosPacket(
+    Position pos,
+    String userName,
+    Map<String, dynamic> userData,
+    List<String> contacts,
+    String sessionId,
+    enc.Key key,
+  ) async {
+    if (_isTrackingUpdateActive) return;
+    _isTrackingUpdateActive = true;
     try {
-      final connectivity = await Connectivity().checkConnectivity();
-      if (connectivity.contains(ConnectivityResult.none)) return;
-
-      final encrypter = enc.Encrypter(enc.AES(key));
+      _currentPosition = pos;
+      final batteryLevel = await _battery.batteryLevel;
+      final iv = enc.IV.fromSecureRandom(16);
+      final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
+      
       final payload = jsonEncode({
-        'message': 'Durum: $status',
-        'updateType': 'STATUS_CHANGE',
+        'lat': pos.latitude,
+        'lng': pos.longitude,
+        'accuracy': pos.accuracy,
+        'battery': "%$batteryLevel",
+        'name': userName,
+        'phone': userData['phone'] ?? "",
+        'updateType': 'LIVE_STREAM',
+        'status': pos.accuracy > 100 ? 'LOW_SIGNAL' : 'ACTIVE',
       });
+
       final encrypted = encrypter.encrypt(payload, iv: iv);
+      
+      await _n8n.sendSosAlert(
+        userName: userName,
+        userPhone: userData['phone'] ?? "Bilinmiyor",
+        emergencyContact: contacts.join(", "),
+        sessionId: sessionId,
+        encryptedData: encrypted.base64,
+        iv: iv.base64,
+        status: pos.accuracy > 100 ? 'LOW_SIGNAL' : 'ACTIVE',
+      ).timeout(const Duration(seconds: 10));
+    } catch (e) {
+      print("SOS PAKET HATA: $e");
+    } finally {
+      _isTrackingUpdateActive = false;
+    }
+  }
+
+  Future<void> finalizeAndStopTracking(String sessionId) async {
+    try {
+      // 1. Firebase'e son bir "Kapatma" paketi gönder (N8N postacı görevini Firebase üstlendiği için direkt gidiyor)
+      await _n8n.sendSosAlert(
+        userName: "Sistem",
+        userPhone: "",
+        emergencyContact: "",
+        sessionId: sessionId,
+        encryptedData: "CANCELLED_BY_USER",
+        iv: "NONE",
+        status: "KULLANICI_SONLANDIRDI",
+      );
+
+      // 2. GPS akışını ve Timer'ları tamamen durdur
+      _stopTracking();
+      
+      print("🛑 CANLI TAKİP KULLANICI TARAFINDAN DURDURULDU: $sessionId");
+    } catch (e) {
+      print("Durdurma hatası: $e");
+    }
+  }
+
+  void _stopTracking() {
+    WakelockPlus.disable();
+    _positionStreamSubscription?.cancel();
+    _heartbeatTimer?.cancel();
+    _liveTrackingTimer?.cancel();
+    _positionStreamSubscription = null;
+    _heartbeatTimer = null;
+    _liveTrackingTimer = null;
+  }
+
+  Future<void> _sendFinalStatus(
+    String userName,
+    Map<String, dynamic> userData,
+    List<String> contacts,
+    String sessionId,
+    enc.Key key,
+    String status,
+  ) async {
+    try {
+      final pos = _currentPosition ?? await Geolocator.getLastKnownPosition();
+      if (pos == null) return;
+
+      final batteryLevel = await _battery.batteryLevel;
+      final iv = enc.IV.fromSecureRandom(16);
+      final encrypter = enc.Encrypter(enc.AES(key, mode: enc.AESMode.cbc));
+      
+      final payload = jsonEncode({
+        'lat': pos.latitude,
+        'lng': pos.longitude,
+        'accuracy': pos.accuracy,
+        'battery': "%$batteryLevel",
+        'name': userName,
+        'phone': userData['phone'] ?? "",
+        'updateType': 'FINAL_STATUS',
+        'status': status,
+      });
+
+      final encrypted = encrypter.encrypt(payload, iv: iv);
+      
       await _n8n.sendSosAlert(
         userName: userName,
         userPhone: userData['phone'] ?? "Bilinmiyor",
@@ -230,7 +355,7 @@ class EmergencyProtocolService {
         encryptedData: encrypted.base64,
         iv: iv.base64,
         status: status,
-      ).timeout(const Duration(seconds: 3), onTimeout: () => false);
+      );
     } catch (_) {}
   }
 

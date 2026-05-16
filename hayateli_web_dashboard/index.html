@@ -19,6 +19,35 @@
 <body>
     <div id="map"></div>
 
+    <!-- Rota Bilgi Kartı (Sadece Navigasyon Başlayınca Görünür) -->
+    <div class="route-info-card" id="routeInfoCard">
+        <div class="duration" id="routeDuration">-- dk</div>
+        <div class="distance" id="routeDistance">-- km</div>
+    </div>
+
+    <!-- Yüzen Kontrol Butonları (FAB) -->
+    <div class="fab-container">
+        <button class="fab-btn" id="fabMapType" title="Harita Türü">🗺️</button>
+        <button class="fab-btn" id="fabTraffic" title="Trafiği Aç/Kapat">🚦</button>
+        <button class="fab-btn" id="fabVoice" title="Sesli Asistan">🔊</button>
+        <button class="fab-btn" id="fabCenter" title="Kazazedeye Odaklan">🎯</button>
+    </div>
+
+    <!-- Sesli Asistan Modal -->
+    <div class="voice-modal-overlay" id="voiceModal">
+        <div class="voice-modal">
+            <h3 style="margin-top:0; color:#b71c1c;">Sesli Asistan Ayarları</h3>
+            <p style="font-size:14px; color:#666;">Bildirimleri okuyacak asistanı seçin:</p>
+            <div class="voice-options" id="voiceOptionsList">
+                <label><input type="radio" name="voiceSelect" value="tr-TR-Wavenet-C" checked> Zuhal (Kadın - Doğal)</label>
+                <label><input type="radio" name="voiceSelect" value="tr-TR-Wavenet-B"> Fenrir (Erkek - Güçlü)</label>
+                <label><input type="radio" name="voiceSelect" value="tr-TR-Wavenet-E"> WaveNet E (Kadın)</label>
+                <label><input type="radio" name="voiceSelect" value="tr-TR-Wavenet-A"> WaveNet A (Kadın)</label>
+                <label><input type="radio" name="voiceSelect" value="off"> ❌ Kapalı</label>
+            </div>
+            <button id="closeVoiceModal" class="action-btn primary" style="margin-top:20px; width:100%;">Kaydet ve Kapat</button>
+        </div>
+    </div>
     <div class="top-nav">
         <div class="nav-header">
             <span class="nav-title">HayatEli Canlı Konum Takibi</span>
@@ -31,12 +60,6 @@
     </div>
 
     <div class="bottom-container">
-        
-        <div class="warning-text">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            Bu konum, otonom bir şekilde kaza geçiren kişinin telefonundan acil durum protokolü ile gönderildi.
-        </div>
-
         <div class="info-card">
             <div class="card-header">Kazazede Bilgileri</div>
             <div class="card-body">
@@ -53,18 +76,12 @@
                             <span class="val blood-text" id="victimBattery">%--</span>
                         </div>
                     </div>
+
                     <div class="metric">
-                        <div class="metric-icon">⏱️</div>
+                        <div class="metric-icon">📍</div>
                         <div class="metric-data">
-                            <span class="label">Anlık Hız</span>
-                            <span class="val"><span id="victimSpeed" class="blood-text">0</span> <small>km/h</small></span>
-                        </div>
-                    </div>
-                    <div class="metric">
-                        <div class="metric-icon">🩸</div>
-                        <div class="metric-data">
-                            <span class="label">Kan Grubu</span>
-                            <span class="val blood-text" id="victimBloodType">-</span>
+                            <span class="label">GPS Koordinatı</span>
+                            <span class="val blood-text" style="font-size: 14px; letter-spacing: -0.5px;" id="victimCoordinates">--.----, --.----</span>
                         </div>
                     </div>
                     <div class="metric">
@@ -74,6 +91,25 @@
                             <span class="val blood-text" id="victimTime">--:--</span>
                         </div>
                     </div>
+                </div>
+
+                <!-- Çift Modlu Navigasyon Alanı -->
+                <div class="nav-info-container" id="navInfoContainer" style="display: none;">
+                    <div class="nav-item">
+                        <i class="fas fa-car-side"></i>
+                        <div id="driving-info"><span>--</span></div>
+                        <small>ARAÇ İLE</small>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-walking"></i>
+                        <div id="walking-info"><span>--</span></div>
+                        <small>YÜRÜYEREK</small>
+                    </div>
+                </div>
+
+                <div class="warning-text-small">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Bu konum otonom acil durum protokolü ile gönderildi.
                 </div>
             </div>
         </div>
@@ -86,6 +122,6 @@
         </div>
     </div>
 
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=11"></script>
 </body>
 </html>
