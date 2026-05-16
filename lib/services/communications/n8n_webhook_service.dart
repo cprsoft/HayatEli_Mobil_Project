@@ -26,7 +26,7 @@ class N8nWebhookService {
         'iv': iv,
         'timestamp': DateTime.now().toUtc().toIso8601String(),
         'lastUpdate': FieldValue.serverTimestamp(),
-        'expiresAt': DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+        'expiresAt': Timestamp.fromDate(DateTime.now().add(const Duration(hours: 24))),
         'userName': userName,
         'userPhone': userPhone,
         'emergencyContact': emergencyContact,

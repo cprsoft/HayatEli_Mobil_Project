@@ -24,6 +24,9 @@ let userHasInteracted = false;
 let isSessionEnded = false;
 let isTrackingActive = false;
 let lastRouteCalcTime = 0;
+let offRoadLine;
+let rescuerMarker;
+
 let isFirstLoad = true;
 let currentVoiceId = "tr-TR-Wavenet-C";
 let isTtsEnabled = true;
@@ -53,9 +56,10 @@ const googleMapsDarkTheme = [ { elementType: "geometry", stylers: [{ color: "#24
 
 window.initMap = function() {
     PulseMarker = class extends google.maps.OverlayView {
-        constructor(position, map) {
+        constructor(position, map, photoUrl) {
             super();
             this.position = position;
+            this.photoUrl = photoUrl;
             this.div = null;
             this.setMap(map);
         }
@@ -63,16 +67,24 @@ window.initMap = function() {
             this.div = document.createElement('div');
             this.div.className = 'pulse-marker';
             this.div.style.position = 'absolute';
+            this.updateContent();
             const panes = this.getPanes();
             panes.overlayImage.appendChild(this.div);
+        }
+        updateContent() {
+            if (this.photoUrl) {
+                this.div.innerHTML = `<img src="${this.photoUrl}" onerror="this.style.display='none'">`;
+            } else {
+                this.div.innerHTML = '';
+            }
         }
         draw() {
             if (!this.div) return;
             const projection = this.getProjection();
             const point = projection.fromLatLngToDivPixel(this.position);
             if (point) {
-                this.div.style.left = (point.x - 12) + 'px';
-                this.div.style.top = (point.y - 12) + 'px';
+                this.div.style.left = (point.x - 13) + 'px';
+                this.div.style.top = (point.y - 13) + 'px';
             }
         }
         onRemove() {
@@ -82,7 +94,48 @@ window.initMap = function() {
             this.position = position;
             this.draw();
         }
+        setPhoto(url) {
+            this.photoUrl = url;
+            if (this.div) this.updateContent();
+        }
     };
+
+    class RescuerMarkerOverlay extends google.maps.OverlayView {
+        constructor(position, map, mode) {
+            super();
+            this.position = position;
+            this.mode = mode;
+            this.div = null;
+            this.setMap(map);
+        }
+        onAdd() {
+            this.div = document.createElement('div');
+            this.div.className = 'rescuer-marker';
+            this.div.style.position = 'absolute';
+            this.updateContent();
+            this.getPanes().overlayImage.appendChild(this.div);
+        }
+        updateContent() {
+            const iconClass = this.mode === 'DRIVING' ? 'fa-car-side' : 'fa-walking';
+            this.div.innerHTML = `<i class="fas ${iconClass}"></i>`;
+        }
+        draw() {
+            if (!this.div) return;
+            const projection = this.getProjection();
+            if (!projection) return;
+            const point = projection.fromLatLngToDivPixel(this.position);
+            if (point) {
+                this.div.style.left = (point.x - 15) + 'px';
+                this.div.style.top = (point.y - 15) + 'px';
+            }
+        }
+        update(pos, mode) {
+            this.position = pos;
+            this.mode = mode;
+            if (this.div) this.updateContent();
+            this.draw();
+        }
+    }
     map = new google.maps.Map(document.getElementById("map"), {
         zoom: 16,
         center: { lat: 39.92, lng: 32.85 },
@@ -94,7 +147,7 @@ window.initMap = function() {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer({ 
         map: map, 
-        suppressMarkers: false,
+        suppressMarkers: true,
         preserveViewport: true,
         polylineOptions: { strokeColor: "#dc2626", strokeWeight: 6 }
     });
@@ -103,7 +156,19 @@ window.initMap = function() {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition((pos) => {
             rescuerPos = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-            if (isTrackingActive) autoUpdateRoute();
+            if (isTrackingActive) {
+                if (!rescuerMarker) {
+                    if (typeof RescuerMarkerOverlay !== 'undefined') {
+                        rescuerMarker = new RescuerMarkerOverlay(rescuerPos, map, currentTravelMode);
+                    }
+                } else {
+                    rescuerMarker.update(rescuerPos, currentTravelMode);
+                }
+                autoUpdateRoute();
+            } else if (rescuerMarker) {
+                rescuerMarker.setMap(null);
+                rescuerMarker = null;
+            }
         }, (err) => {
             console.error(err);
         }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
@@ -137,54 +202,62 @@ window.initMap = function() {
     };
 };
 
-async function autoUpdateRoute() {
+let currentTravelMode = 'DRIVING';
+
+async function autoUpdateRoute(force = false) {
     const now = Date.now();
     if (!victimPos || !rescuerPos) return;
 
-    if (lastCalculatedRescuerPos && window.google && google.maps.geometry) {
-        const dist = google.maps.geometry.spherical.computeDistanceBetween(rescuerPos, lastCalculatedRescuerPos);
-        if (dist < 20 && (now - lastRouteCalcTime < 30000)) return;
+    if (!force) {
+        if (lastCalculatedRescuerPos && window.google && google.maps.geometry) {
+            const dist = google.maps.geometry.spherical.computeDistanceBetween(rescuerPos, lastCalculatedRescuerPos);
+            if (dist < 20 && (now - lastRouteCalcTime < 30000)) return;
+        }
+        if (now - lastRouteCalcTime < 10000) return;
     }
-
-    if (now - lastRouteCalcTime < 10000) return;
 
     directionsService.route({
         origin: rescuerPos,
         destination: victimPos,
-        travelMode: google.maps.TravelMode.DRIVING
+        travelMode: google.maps.TravelMode[currentTravelMode]
     }, (response, status) => {
         if (status === 'OK') {
             directionsRenderer.setDirections(response);
             lastRouteCalcTime = now;
             lastCalculatedRescuerPos = rescuerPos;
+
+            const leg = response.routes[0].legs[0];
+            document.getElementById('metricValue').innerText = leg.duration.text;
+            document.getElementById('metricDistance').innerText = leg.distance.text;
+
+            const route = response.routes[0].legs[0];
+            const lastPoint = route.steps[route.steps.length - 1].end_location;
+            if (offRoadLine) offRoadLine.setMap(null);
+            offRoadLine = new google.maps.Polyline({
+                path: [lastPoint, victimPos],
+                strokeColor: "#dc2626",
+                strokeOpacity: 0,
+                icons: [{
+                    icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3, strokeWeight: 4 },
+                    offset: '0',
+                    repeat: '15px'
+                }],
+                map: map
+            });
         }
     });
-
-    updateNavigationInfo(rescuerPos, victimPos);
 }
 
-async function updateNavigationInfo(userPos, victimPos) {
-    const modes = [
-        { mode: 'DRIVING', id: 'driving-info' },
-        { mode: 'WALKING', id: 'walking-info' }
-    ];
-
-    document.getElementById('navInfoContainer').style.display = 'grid';
-
-    for (const m of modes) {
-        directionsService.route({
-            origin: userPos,
-            destination: victimPos,
-            travelMode: google.maps.TravelMode[m.mode]
-        }, (result, status) => {
-            if (status === 'OK') {
-                const leg = result.routes[0].legs[0];
-                document.getElementById(m.id).innerHTML = `<span>${leg.duration.text}</span><br><small>${leg.distance.text}</small>`;
-                if (m.mode === 'DRIVING' && leg.distance.value < 150) speak("Hedefe varmak üzeresiniz.");
-            }
-        });
-    }
+function setTravelMode(mode) {
+    currentTravelMode = mode;
+    document.getElementById('btnDriving').classList.toggle('active', mode === 'DRIVING');
+    document.getElementById('btnWalking').classList.toggle('active', mode === 'WALKING');
+    if (rescuerMarker && rescuerPos) rescuerMarker.update(rescuerPos, mode);
+    autoUpdateRoute(true); 
 }
+
+document.getElementById('btnDriving').onclick = () => setTravelMode('DRIVING');
+document.getElementById('btnWalking').onclick = () => setTravelMode('WALKING');
 
 const params = new URLSearchParams(window.location.search || window.location.hash.substring(1));
 const sessionId = params.get('id') || "TEST_SESSION";
@@ -263,13 +336,14 @@ if (rawKey) {
                 
                 victimPos = position;
                 if (!marker) {
-                    marker = new PulseMarker(position, map);
+                    marker = new PulseMarker(position, map, realData.userPhoto || realData.photoUrl);
                     map.setCenter(position);
                     map.setZoom(18);
                     isFirstLoad = false;
                     speak("Acil durum sinyali alındı.");
                 } else {
                     marker.setPosition(position);
+                    marker.setPhoto(realData.userPhoto || realData.photoUrl);
                     if (isFirstLoad) { map.panTo(position); isFirstLoad = false; }
                 }
                 if (isTrackingActive) {
@@ -286,9 +360,17 @@ document.getElementById('startTrackingBtn').onclick = function() {
     isTrackingActive = true;
     isAutoFollowActive = true;
     document.querySelector('.info-card').classList.add('tracking-active');
-    if (victimPos) {
-        map.setZoom(18);
-        map.panTo(victimPos);
+    if (rescuerPos && !rescuerMarker && typeof RescuerMarkerOverlay !== 'undefined') {
+        rescuerMarker = new RescuerMarkerOverlay(rescuerPos, map, currentTravelMode);
+    }
+    if (victimPos) { 
+        map.setZoom(18); 
+        map.panTo(victimPos); 
+        if (window.innerWidth < 768) {
+            map.panBy(0, 180);
+        } else {
+            map.panBy(-150, 0);
+        }
     }
     autoUpdateRoute();
     speak("Canlı takip ve navigasyon başlatıldı.");
@@ -322,3 +404,15 @@ function showFinalOverlay() {
     `;
     document.body.appendChild(overlay);
 }
+
+document.getElementById('hideInfoBtn').addEventListener('click', () => {
+    document.getElementById('victimInfoSection').classList.add('hidden');
+    document.querySelector('.info-card').classList.add('minimized');
+    document.getElementById('fabShowInfo').style.display = 'flex';
+});
+
+document.getElementById('fabShowInfo').addEventListener('click', () => {
+    document.getElementById('victimInfoSection').classList.remove('hidden');
+    document.querySelector('.info-card').classList.remove('minimized');
+    document.getElementById('fabShowInfo').style.display = 'none';
+});

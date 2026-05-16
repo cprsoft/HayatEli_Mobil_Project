@@ -107,6 +107,7 @@ class EmergencyProtocolService {
           'lng': _currentPosition?.longitude,
           'battery': "%$batteryLevel",
           'updateType': 'INITIAL',
+          'userPhoto': userData['profilePictureUrl'] ?? "",
         });
 
         final encrypted = encrypter.encrypt(payload, iv: iv);
@@ -266,6 +267,7 @@ class EmergencyProtocolService {
         'phone': userData['phone'] ?? "",
         'updateType': 'LIVE_STREAM',
         'status': pos.accuracy > 100 ? 'LOW_SIGNAL' : 'ACTIVE',
+        'userPhoto': userData['profilePictureUrl'] ?? "",
       });
 
       final encrypted = encrypter.encrypt(payload, iv: iv);
@@ -343,6 +345,7 @@ class EmergencyProtocolService {
         'phone': userData['phone'] ?? "",
         'updateType': 'FINAL_STATUS',
         'status': status,
+        'userPhoto': userData['profilePictureUrl'] ?? "",
       });
 
       final encrypted = encrypter.encrypt(payload, iv: iv);

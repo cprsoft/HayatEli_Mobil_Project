@@ -97,12 +97,15 @@ body {
 .card-header {
     background: var(--blood-light);
     color: var(--blood-red);
-    padding: 12px 20px;
-    font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 6px 15px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.card-body { padding: 12px 16px; }
-.victim-details h2 { margin: 0 0 2px 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-.victim-details p { margin: 0 0 12px 0; font-size: 13px; color: var(--text-muted); font-weight: 500;}
+.card-body { padding: 8px 15px; }
+.victim-details h2 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.victim-details p { margin: 0 0 8px 0; font-size: 12px; color: var(--text-muted); font-weight: 500;}
 
 .warning-text-small {
     background-color: var(--blood-light);
@@ -142,9 +145,31 @@ body {
     transition: transform 0.2s;
 }
 
-/* Dalgalanma (Ripple) Efekti */
 .ripple-effect {
     animation: btnPulse 2s infinite;
+}
+.rescuer-marker {
+    position: absolute;
+    width: 30px; 
+    height: 30px;
+    background: #1976D2;
+    border: 3px solid white;
+    border-radius: 50%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    z-index: 1001;
+    animation: rescuerPulse 2s infinite;
+}
+.rescuer-marker i {
+    color: white;
+    font-size: 14px;
+    pointer-events: none;
+}
+@keyframes rescuerPulse {
+    0% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7); }
+    70% { box-shadow: 0 0 0 15px rgba(25, 118, 210, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0); }
 }
 @keyframes btnPulse {
     0% { box-shadow: 0 0 0 0 rgba(183, 28, 28, 0.7); }
@@ -154,48 +179,73 @@ body {
 
 .btn:active { transform: scale(0.98); }
 
-/* Takibe Başla'ya basınca kartı sağa alan animasyon */
 .info-card.tracking-active {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    left: auto;
-    width: 380px;
-    max-height: 85vh;
+    top: 130px;
+    right: 15px;
+    width: 300px;
+    max-height: 65vh;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     z-index: 1000;
-    transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(15px);
+    transition: all 0.3s ease;
+    background: white;
     overflow-y: auto;
-    padding-bottom: 20px;
+    padding: 15px;
+}
+#victimInfoSection.hidden {
+    display: none !important;
+}
+.info-card.minimized {
+    padding-top: 5px !important;
 }
 
-/* Navigasyon Alanı (Taşmayı Önleyen Grid Yapısı) */
-.nav-info-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 15px;
-    padding: 12px;
-    background: #fdf2f2;
-    border: 1px solid #fee2e2;
+
+.nav-control-panel { 
+    display: none; 
+}
+
+.info-card.tracking-active .nav-control-panel { 
+    display: block; 
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+}
+
+.mode-tabs { 
+    display: flex; 
+    gap: 8px; 
+}
+
+.mode-tab {
+    flex: 1; 
+    padding: 10px;
+    border: 2px solid #B71C1C;
     border-radius: 12px;
+    font-weight: 700; 
+    cursor: pointer; 
+    transition: 0.3s;
+    background: transparent; 
+    color: #B71C1C;
 }
 
-.nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.mode-tab.active { 
+    background: #B71C1C; 
+    color: white; 
+}
+
+.mode-tab:hover { 
+    background: #D32F2F; 
+    color: white; 
+}
+
+.metric-display {
     text-align: center;
-    padding: 8px;
-    border-radius: 8px;
+    background: #fdf2f2;
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 12px;
 }
-
-.nav-item i { font-size: 1.4rem; margin-bottom: 5px; color: #dc2626; }
-.nav-item span { font-weight: 800; color: #1f2937; font-size: 1rem; line-height: 1.2; }
-.nav-item small { color: #4b5563; font-size: 0.7rem; font-weight: 700; margin-top: 2px; }
 
 /* Modal ve Genel Aksiyon Butonları (Kırmızı Tema) */
 .action-btn.primary {
@@ -219,13 +269,24 @@ body {
 .action-btn.primary:active { transform: translateY(0); }
 
 .pulse-marker {
-    width: 24px;
-    height: 24px;
-    background: #ff0000;
+    width: 26px; 
+    height: 26px;
+    background: #FF0000;
+    border: 2px solid white;
     border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 0 10px rgba(255,0,0,0.8);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    overflow: hidden;
     animation: pulse 1.5s infinite;
+}
+
+.pulse-marker img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 @keyframes pulse {
@@ -234,11 +295,10 @@ body {
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
 }
 
-/* FAB Container */
 .fab-container {
     position: absolute;
-    right: 15px;
-    top: 50%;
+    left: 20px;
+    top: 35%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
@@ -308,3 +368,62 @@ body {
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+@media (max-width: 768px) {
+    .header h1 { font-size: 14px; padding: 8px 0; }
+    .status-banner { font-size: 10px; padding: 4px; }
+
+    .fab-container {
+        left: auto;
+        right: 12px;
+        top: 140px;
+        gap: 6px;
+        transform: none;
+    }
+    .fab-btn { width: 32px; height: 32px; font-size: 16px; }
+
+    .info-card.tracking-active {
+        width: 92%;
+        left: 4%;
+        top: auto;
+        bottom: 72px;
+        padding: 4px;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 12px;
+        max-height: 340px;
+    }
+    
+    .info-card h3 { display: none; }
+    .info-card .card-body { padding: 4px 10px !important; }
+    .info-card .card-header { padding: 4px 12px !important; font-size: 11px; }
+
+    .warning-text-small { margin-top: 4px !important; padding: 4px 8px !important; font-size: 9px !important; }
+    .warning-text-small svg { width: 10px; height: 10px; }
+
+    .victim-details { display: flex; flex-direction: column; gap: 2px; }
+    .victim-name { font-size: 14px; line-height: 1.2; font-weight: 800; }
+    .victim-phone { font-size: 11px; opacity: 0.8; }
+    
+    .metrics-grid-2x2 { gap: 4px; margin: 4px 0; padding-top: 0; }
+    .metric-data { padding: 5px; background: #f8f9fa; border-radius: 8px; }
+    .metric-data .label { font-size: 8px; } 
+    .metric-data .val { font-size: 10px; letter-spacing: -0.2px; }
+    .metric-icon { width: 20px; height: 20px; font-size: 10px; }
+
+    .info-card.tracking-active .nav-control-panel { margin-top: 4px; padding-top: 4px; }
+    .mode-tabs { gap: 6px; }
+    .mode-tab { padding: 7px 4px; font-size: 10px; border-radius: 8px; }
+    
+    .metric-display { margin-top: 6px; padding: 5px; border-radius: 6px; }
+    #metricValue { font-size: 16px; }
+    #metricDistance { font-size: 9px; }
+
+    .bottom-container { padding: 8px 15px; }
+    .action-btn.primary { 
+        padding: 10px; 
+        font-size: 13px; 
+        border-radius: 8px;
+        max-width: 250px;
+        width: 100%;
+    }
+}
