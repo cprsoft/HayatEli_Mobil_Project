@@ -10,8 +10,6 @@ import 'main_scaffold.dart';
 import 'edit_profile_screen.dart';
 import '../services/crash_detection/local_contact_service.dart';
 import 'package:another_telephony/telephony.dart' hide SmsStatus;
-import 'package:send_message/send_message.dart';
-import '../services/audio/tts_service.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -160,86 +158,6 @@ class ProfileScreen extends ConsumerWidget {
                   ], marginBottom: 8)),
                 ],
 
-                const SizedBox(height: 25),
-                InkWell(
-                  onTap: () async {
-                    try {
-                      String result = await sendSMS(
-                        message: "HayatEli Sessiz SMS Testi (SendMessage) ✅",
-                        recipients: ["+905052219647"],
-                        sendDirect: true,
-                      );
-                      
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Sonuç: $result ✅')),
-                        );
-                      }
-                    } catch (error) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Sms Hatası: $error ❌')),
-                        );
-                      }
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(15),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3), width: 1.5),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.send_to_mobile, color: Colors.blue),
-                        const SizedBox(width: 12),
-                        Text(
-                          "SESSİZ SMS TESTİ (05052219647)",
-                          style: GoogleFonts.outfit(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    try {
-                      await ref.read(ttsServiceProvider).speak("HayatEli Sesli Asistan testi başarılı. Seni duyabiliyorum kral!");
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Ses Hatası: $e ❌')),
-                        );
-                      }
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(15),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.withValues(alpha: 0.1),
-                      border: Border.all(color: Colors.purple.withValues(alpha: 0.3), width: 1.5),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.record_voice_over, color: Colors.purple),
-                        const SizedBox(width: 12),
-                        Text(
-                          "SESLİ ASİSTAN TESTİ",
-                          style: GoogleFonts.outfit(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 40),
                 Center(
                   child: InkWell(

@@ -36,8 +36,6 @@ final userProfileProvider = StreamProvider<UserModel?>((ref) {
           .asyncMap((doc) async {
         if (!doc.exists) return null;
         final userModel = UserModel.fromMap(doc.data()!);
-        
-        // OTONOM KAYIT: Zaten çalışan fonksiyonu her veri geldiğinde tetikle
         await authService.saveUserProfile(userModel);
         debugPrint("📋 OTONOM HIVE GÜNCELLENDİ: ${userModel.fullName}");
         
@@ -322,6 +320,8 @@ class AuthService {
 
   Future<void> signOut() async {
     await auth.signOut();
+    final userBox = Hive.box('user_box');
+    await userBox.clear();
   }
 
   static String? validatePassword(String password) {

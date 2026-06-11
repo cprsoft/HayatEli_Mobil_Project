@@ -26,17 +26,12 @@ class Validators {
 
 
   static const List<String> _allowedDomains = [
-    // Google
     'gmail.com', 'googlemail.com',
-    // Microsoft
     'hotmail.com', 'hotmail.com.tr',
     'outlook.com', 'outlook.com.tr',
     'live.com', 'live.com.tr', 'msn.com',
-    // Yahoo
     'yahoo.com', 'yahoo.com.tr',
-    // Apple
     'icloud.com', 'me.com', 'mac.com',
-    // Yandex
     'yandex.com', 'yandex.ru',
   ];
 
@@ -58,15 +53,11 @@ class Validators {
     }
 
     final email = value.trim().toLowerCase();
-
-    // Format kontrolü
     final emailRegex =
         RegExp(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$');
     if (!emailRegex.hasMatch(email)) {
       return 'Geçerli bir e-posta adresi girin.';
     }
-
-    // Güvenlik filtresi: Injection karakterleri
     if (_containsAttackPatterns(value)) {
       return 'E-posta adresinde geçersiz karakter bulundu.';
     }
@@ -193,7 +184,7 @@ class Validators {
 
 
   static String? validateFreeText(String? value, {String fieldName = 'Alan'}) {
-    if (value == null || value.trim().isEmpty) return null; // İsteğe bağlı
+    if (value == null || value.trim().isEmpty) return null; 
 
     if (_containsAttackPatterns(value)) {
       return '$fieldName geçersiz karakter içeriyor.';
@@ -276,15 +267,11 @@ class Validators {
   static String sanitize(String input) {
     return input
         .trim()
-        // HTML / Script taglerini kaldır
         .replaceAll(RegExp(r'<[^>]*>'), '')
-        // Tehlikeli özel karakterleri encode et
         .replaceAll('&', '&amp;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#x27;')
-        // Kontrol karakterlerini temizle (null byte dahil)
         .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '')
-        // Uzun boşlukları tekile indir
         .replaceAll(RegExp(r'  +'), ' ');
   }
 

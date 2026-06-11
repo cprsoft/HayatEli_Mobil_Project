@@ -16,9 +16,6 @@ class N8nWebhookService {
   }) async {
     try {
       debugPrint("🔥 FIREBASE CANLI TAKİP: $sessionId");
-      
-      // Veriyi direkt hedefe, Firebase'e yazıyoruz. 
-      // N8N'deki "Delete/Create" karmaşası burada SetOptions(merge: true) ile çözülüyor.
       await _firestore.collection('active_sos').doc(sessionId).set({
         'sessionId': sessionId,
         'status': status,
@@ -36,7 +33,6 @@ class N8nWebhookService {
       return true;
     } catch (e) {
       debugPrint("❌ FIREBASE HATASI: $e");
-      // Hata olsa bile sistemi durdurmuyoruz, bir sonraki paketi bekliyoruz.
       return false;
     }
   }

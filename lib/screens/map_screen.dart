@@ -164,7 +164,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         setState(() {
           _hasSearched = true;
           if (results != null) {
-            _placesList = results.take(5).toList(); // En yakın olan 5 kayıt
+            _placesList = results.take(5).toList();
           } else {
             _placesList = [];
           }
@@ -194,9 +194,26 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               SliverToBoxAdapter(
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 30),
+                    Text(
+                      "ACİL NOKTALAR",
+                      style: GoogleFonts.outfit(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFFB71C1C),
+                        letterSpacing: 2.0,
+                        shadows: [
+                          Shadow(
+                            color: Colors.redAccent.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     _buildPremiumSegmentedControl(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     _buildFilterSection(),
                     const SizedBox(height: 12),
                   ],
@@ -340,7 +357,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
         ),
         child: Row(
           children: [
-            // Sol Taraf: Filtre Combobox'ları
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -352,14 +368,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
               ),
             ),
             const SizedBox(width: 16),
-            
-            // Sağ Taraf: Sorgula ve En Yakın Bul Butonları
             SizedBox(
               width: 90,
-              height: 100, // 2 Combobox yüksekliği
+              height: 100, 
               child: Column(
                 children: [
-                  // Sorgula Butonu (Üst) -> Yeşil
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
@@ -396,9 +409,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                     ),
                   ),
                   
-                  const SizedBox(height: 2), // Araya ince bir çizgi boşluğu
-                  
-                  // En Yakın Hastane Butonu (Alt) -> Kan Kırmızısı
+                  const SizedBox(height: 2), 
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
@@ -474,7 +485,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
           onChanged: (value) {
             setState(() {
               _selectedCity = value;
-              _selectedDistrict = null; // İl değişince ilçeyi sıfırla
+              _selectedDistrict = null;
             });
           },
         ),
@@ -519,8 +530,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
       ),
     );
   }
-
-  // ALT PANEL (Detay Gösterimi)
   void _showPlaceDetails(Map<String, dynamic> item) {
     showModalBottomSheet(
       context: context,
@@ -537,7 +546,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Çekme çubuğu
               Center(
                 child: Container(
                   width: 48,
@@ -546,13 +554,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
                 ),
               ),
-              // İsim
               Text(
                 item['name'] ?? 'Bilinmeyen İstasyon',
                 style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 16),
-              // İl/İlçe Badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
@@ -562,7 +568,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 ),
               ),
               const SizedBox(height: 24),
-              // Adres
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -577,7 +582,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 ],
               ),
               const SizedBox(height: 16),
-              // Telefon
               Row(
                 children: [
                   Icon(Icons.phone, color: Colors.red.shade400, size: 24),
@@ -588,8 +592,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   ),
                 ],
               ),
-              
-              // Nöbet Saatleri (Sadece Eczane)
               if (!isHospitalSelected && item['pharmacyDutyStart'] != null && item['pharmacyDutyEnd'] != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
@@ -607,7 +609,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   ),
                 ),
                 
-              // Ekstra Telefon (Sadece Eczane ve dolu ise)
               if (!isHospitalSelected && item['phone2'] != null && item['phone2'].toString().isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 12.0),
@@ -623,7 +624,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                   ),
                 ),
                 
-              // Yol Tarifi / Tarif Notu (Sadece Eczane ve dolu ise)
               if (!isHospitalSelected && item['directions'] != null && item['directions'].toString().isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0),
@@ -643,7 +643,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 ),
 
               const SizedBox(height: 32),
-              // Rota Butonu
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -711,13 +710,11 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
     }
 
     return SliverPadding(
-      // Alt kısımdan 100 pingellik boşluk bırakıyoruz ki BottomNavBar'ın altında kalmasın.
       padding: const EdgeInsets.only(left: 20, right: 20, top: 4, bottom: 100),
       sliver: SliverList.builder(
         itemCount: _placesList.length,
         itemBuilder: (context, index) {
         final item = _placesList[index];
-        // En Yakın API'den dönen location cevabında distanceMt var. "Sorgula" cevabında yok.
         final bool isClosest = item['distanceMt'] != null && index == 0; 
         
         return Container(
@@ -775,7 +772,6 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Sol İkon (Resim Dosyası Ne İse O)
                     Image.asset(
                       isHospitalSelected ? 'lib/assets/images/hastane_ikon.png' : 'lib/assets/images/eczane_ikon.jpg',
                       height: 64,
@@ -793,8 +789,7 @@ class _MapScreenState extends State<MapScreen> with SingleTickerProviderStateMix
                       ),
                     ),
                     const SizedBox(width: 16),
-                    
-                    // Orta Bilgiler 
+                     
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

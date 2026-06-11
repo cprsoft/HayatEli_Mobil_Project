@@ -1,4 +1,3 @@
-// Temel Yapılandırma ve Anahtarlar
 export const ENV = {
     GOOGLE_MAPS_API_KEY: "AIzaSyA6tYRwS22f6pkbrwYbajT_yz7bh1DwgLg",
     FIREBASE: {

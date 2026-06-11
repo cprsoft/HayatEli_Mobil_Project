@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:send_message/send_message.dart'; // Senin çalışan paket
+import 'package:send_message/send_message.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import '../communications/n8n_webhook_service.dart';
-import '../audio/tts_service.dart'; // TtsService geri geldi
+import '../audio/tts_service.dart'; 
 import 'package:encrypt/encrypt.dart' as enc;
 import 'local_contact_service.dart';
 import 'package:battery_plus/battery_plus.dart';
@@ -15,15 +15,15 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 
 class EmergencyProtocolService {
-  final TtsService _tts; // Bizim gelişmiş TTS servisi
+  final TtsService _tts;
   final N8nWebhookService _n8n = N8nWebhookService();
   final Function(String status) onStatusUpdate;
   Timer? _liveTrackingTimer;
   final Battery _battery = Battery();
   bool _isFinalSignalSent = false;
-  String? currentSessionId; // Aktif session ID'yi burada tutuyoruz
+  String? currentSessionId; 
 
-  static const String _targetNumber = "+905052219647";
+  static const String _targetNumber = "112";
   Position? _currentPosition;
   Future<Position?>? _locationFuture;
 
@@ -66,8 +66,6 @@ class EmergencyProtocolService {
           : "Konum tespit edilemedi.";
       
       final msg = "ACİL DURUM : $finalName kaza geçirmiştir. Tür: Araç Kazası. Konum: $mapsUrl";
-      
-      // ESKİ ÇALIŞAN SMS YÖNTEMİ
       await _sendSmsToNumber(_targetNumber, msg);
     } catch (_) { 
       onStatusUpdate("Faz 1 tamamlandı..."); 
@@ -290,7 +288,6 @@ class EmergencyProtocolService {
 
   Future<void> finalizeAndStopTracking(String sessionId) async {
     try {
-      // 1. Firebase'e son bir "Kapatma" paketi gönder (N8N postacı görevini Firebase üstlendiği için direkt gidiyor)
       await _n8n.sendSosAlert(
         userName: "Sistem",
         userPhone: "",
@@ -300,8 +297,6 @@ class EmergencyProtocolService {
         iv: "NONE",
         status: "KULLANICI_SONLANDIRDI",
       );
-
-      // 2. GPS akışını ve Timer'ları tamamen durdur
       _stopTracking();
       
       print("🛑 CANLI TAKİP KULLANICI TARAFINDAN DURDURULDU: $sessionId");
@@ -364,7 +359,6 @@ class EmergencyProtocolService {
 
   Future<void> _sendSmsToNumber(String number, String message) async {
     try {
-      // SENİN ÇALIŞAN SMS YÖNTEMİN
       await sendSMS(
         message: message,
         recipients: [number],
@@ -375,7 +369,6 @@ class EmergencyProtocolService {
 
   Future<void> _callEmergency() async {
     try { 
-      // SENİN ÇALIŞAN OTONOM ARAMA YÖNTEMİN
       await FlutterPhoneDirectCaller.callNumber(_targetNumber); 
     } catch (_) {}
   }

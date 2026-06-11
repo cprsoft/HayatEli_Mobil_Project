@@ -1,0 +1,33 @@
+FROM ubuntu:22.04
+
+# Sistem bagimliliklarini kuruyoruz
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y \
+    curl \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Ollama kurulumu
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# Calisma dizini ve kodlar
+WORKDIR /app
+
+# Gerekli kütüphanelerin kurulmasi
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Proje dosyalarini kopyaliyoruz
+COPY main.py .
+COPY first_aid_protocols.json .
+COPY start.sh .
+
+# Baslatici script'e calistirma yetkisi veriyoruz
+RUN chmod +x start.sh
+
+# HuggingFace portu
+EXPOSE 7860
+
+# Baslatici
+CMD ["./start.sh"]

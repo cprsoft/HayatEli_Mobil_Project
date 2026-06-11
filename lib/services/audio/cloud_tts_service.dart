@@ -10,26 +10,26 @@ class CloudTtsService {
 
   static const List<Map<String, dynamic>> femaleVoices = [
     {
-      'id': 'tr-TR-Chirp3-HD-Zuhal',
-      'name': 'Zuhal',
-      'quality': 'Chirp3 HD',
-      'description': 'En doğal, samimi kadın sesi',
+      'id': 'tr-TR-Neural2-C',
+      'name': 'Zuhal (Yapay Zeka)',
+      'quality': 'Neural2',
+      'description': 'En doğal, premium kadın sesi',
       'languageCode': 'tr-TR',
       'isDefault': true,
     },
     {
-      'id': 'tr-TR-Chirp3-HD-Aoede',
-      'name': 'Aoede',
-      'quality': 'Chirp3 HD',
+      'id': 'tr-TR-Neural2-A',
+      'name': 'Aoede (Yapay Zeka)',
+      'quality': 'Neural2',
       'description': 'Yumuşak, profesyonel kadın sesi',
       'languageCode': 'tr-TR',
       'isDefault': false,
     },
     {
-      'id': 'tr-TR-Chirp3-HD-Sulafat',
-      'name': 'Sulafat',
-      'quality': 'Chirp3 HD',
-      'description': 'Enerjik, genç kadın sesi',
+      'id': 'tr-TR-Wavenet-C',
+      'name': 'Sulafat (WaveNet)',
+      'quality': 'WaveNet',
+      'description': 'Enerjik kadın sesi',
       'languageCode': 'tr-TR',
       'isDefault': false,
     },
@@ -53,26 +53,18 @@ class CloudTtsService {
 
   static const List<Map<String, dynamic>> maleVoices = [
     {
-      'id': 'tr-TR-Chirp3-HD-Fenrir',
-      'name': 'Fenrir',
-      'quality': 'Chirp3 HD',
-      'description': 'Güçlü, doğal erkek sesi',
+      'id': 'tr-TR-Neural2-B',
+      'name': 'Fenrir (Yapay Zeka)',
+      'quality': 'Neural2',
+      'description': 'Güçlü, premium erkek sesi',
       'languageCode': 'tr-TR',
       'isDefault': true,
     },
     {
-      'id': 'tr-TR-Chirp3-HD-Charon',
-      'name': 'Charon',
-      'quality': 'Chirp3 HD',
+      'id': 'tr-TR-Neural2-E',
+      'name': 'Charon (Yapay Zeka)',
+      'quality': 'Neural2',
       'description': 'Derin, otoriter erkek sesi',
-      'languageCode': 'tr-TR',
-      'isDefault': false,
-    },
-    {
-      'id': 'tr-TR-Chirp3-HD-Puck',
-      'name': 'Puck',
-      'quality': 'Chirp3 HD',
-      'description': 'Enerjik, dinamik erkek sesi',
       'languageCode': 'tr-TR',
       'isDefault': false,
     },
@@ -84,18 +76,10 @@ class CloudTtsService {
       'languageCode': 'tr-TR',
       'isDefault': false,
     },
-    {
-      'id': 'tr-TR-Wavenet-C',
-      'name': 'WaveNet C',
-      'quality': 'WaveNet',
-      'description': 'Klasik erkek sesi (WaveNet)',
-      'languageCode': 'tr-TR',
-      'isDefault': false,
-    },
   ];
 
-  static const String defaultFemaleVoiceId = 'tr-TR-Chirp3-HD-Zuhal';
-  static const String defaultMaleVoiceId = 'tr-TR-Chirp3-HD-Fenrir';
+  static const String defaultFemaleVoiceId = 'tr-TR-Neural2-C';
+  static const String defaultMaleVoiceId = 'tr-TR-Neural2-B';
 
   static Map<String, dynamic>? getVoiceById(String id) {
     final all = [...femaleVoices, ...maleVoices];
@@ -134,7 +118,7 @@ class CloudTtsService {
               },
             }),
           )
-          .timeout(const Duration(seconds: 8)); 
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -144,25 +128,9 @@ class CloudTtsService {
         }
       } else {
         debugPrint('[CloudTTS] HTTP ${response.statusCode}: ${response.body}');
-        if (response.statusCode == 400 && voiceId.contains('Chirp3')) {
-          final fallbackId = voiceId.contains('Fenrir') ||
-                  voiceId.contains('Charon') ||
-                  voiceId.contains('Puck')
-              ? defaultMaleVoiceId.replaceFirst('Chirp3-HD-Fenrir', 'Wavenet-B')
-              : defaultFemaleVoiceId.replaceFirst('Chirp3-HD-Zuhal', 'Wavenet-E');
-          debugPrint('[CloudTTS] Chirp3-HD desteklenmiyor, WaveNet\'e geçiliyor: $fallbackId');
-          return synthesize(text, voiceId: fallbackId, speakingRate: speakingRate);
-        }
       }
     } catch (e) {
       debugPrint('[CloudTTS] Error/Timeout: $e');
-      if (voiceId.contains('Chirp3')) {
-        final fallbackId = voiceId.contains('Fenrir') || voiceId.contains('Charon') || voiceId.contains('Puck')
-            ? 'tr-TR-Wavenet-B'
-            : 'tr-TR-Wavenet-E';
-        debugPrint('[CloudTTS] Hata sonrası WaveNet fallback: $fallbackId');
-        return synthesize(text, voiceId: fallbackId, speakingRate: speakingRate);
-      }
     }
     return null;
   }

@@ -9,55 +9,73 @@ final ttsServiceProvider = Provider<TtsService>((ref) {
 class TtsService {
   final FlutterTts _tts = FlutterTts();
   bool _isInitialized = false;
-  Future<void>? _initFuture;
+  bool _isStopped = false;
+  bool _isPaused = false;
+  String _currentText = "";
+  int _lastWordStart = 0;
 
-  Future<void> _ensureInitialized() async {
+  TtsService() {
+    _tts.setProgressHandler((String text, int start, int end, String word) {
+      if (!_isPaused) {
+        _currentText = text;
+        _lastWordStart = start;
+      }
+    });
+    _tts.setErrorHandler((_) {});
+  }
+
+  Future<void> initialize() async {
     if (_isInitialized) return;
-    if (_initFuture != null) return _initFuture;
-
-    _initFuture = _doInitialization();
-    return _initFuture;
-  }
-
-  Future<void> _doInitialization() async {
     try {
       if (Platform.isAndroid) {
         await _tts.setEngine("com.google.android.tts");
+        await _tts.awaitSpeakCompletion(true);
       }
       await _tts.setLanguage("tr-TR");
       await _tts.setSpeechRate(0.6);
       await _tts.setPitch(1.4);
-      _isInitialized = true;
-    } catch (_) {
-      _initFuture = null;
-    }
-  }
-
-  Future<void> init() async {
-    try {
-      if (Platform.isAndroid) {
-        await _tts.setEngine("com.google.android.tts");
-      }
-      await _tts.setLanguage("tr-TR");
-      await _tts.setSpeechRate(0.6);
-      await _tts.setPitch(1.4);
-      await _tts.setVolume(0.0);
-      await _tts.speak(" "); // Sessizce motoru ateşle
-      await _tts.setVolume(1.0);
       _isInitialized = true;
     } catch (_) {}
   }
 
   Future<void> speak(String text) async {
-    await _ensureInitialized();
+    await initialize();
+    _isStopped = false;
+    try {
+      if (_isPaused &&
+          _currentText == text &&
+          _lastWordStart > 0 &&
+          _lastWordStart < text.length) {
+        final remaining = text.substring(_lastWordStart);
+        _isPaused = false;
+        _currentText = text;
+        await _tts.speak(remaining);
+      } else {
+        _isPaused = false;
+        _currentText = text;
+        _lastWordStart = 0;
+        await _tts.speak(text);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> pause() async {
+    _isPaused = true;
     try {
       await _tts.stop();
-      await Future.delayed(const Duration(milliseconds: 100));
-      await _tts.speak(text);
     } catch (_) {}
   }
 
   Future<void> stop() async {
-    await _tts.stop();
+    _isStopped = true;
+    _isPaused = false;
+    _currentText = "";
+    _lastWordStart = 0;
+    try {
+      await _tts.stop();
+    } catch (_) {}
   }
+
+  bool get isStopped => _isStopped;
+  bool get isPaused => _isPaused;
 }

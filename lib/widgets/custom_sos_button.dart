@@ -46,8 +46,8 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
           );
         },
         child: Container(
-          width: 190,
-          height: 190,
+          width: 210,
+          height: 210,
           decoration: BoxDecoration(
             color: const Color(0xFFB71C1C),
             shape: BoxShape.circle,
@@ -72,16 +72,16 @@ class _CustomSosButtonState extends ConsumerState<CustomSosButton>
                   "112 ACİL",
                   style: GoogleFonts.outfit(
                     color: Colors.white,
-                    fontSize: 30,
+                    fontSize: 32,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 const Icon(
                   Icons.phone_in_talk,
                   color: Colors.white,
-                  size: 48,
+                  size: 52,
                 ),
               ],
             ),

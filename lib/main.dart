@@ -37,7 +37,7 @@ void main() async {
   container.listen(userProfileProvider, (previous, next) {});
   
   try {
-    await container.read(ttsServiceProvider).init();
+    await container.read(ttsServiceProvider).initialize();
     debugPrint("🔊 TTS Motoru başarıyla uyandırıldı.");
   } catch (e) {
     debugPrint("🔊 TTS Uyandırma hatası: $e");

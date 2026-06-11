@@ -7,7 +7,7 @@ import '../widgets/live_location_card.dart';
 import '../services/auth/auth_service.dart';
 import 'sign_in.dart';
 import 'main_scaffold.dart';
-import 'crash_alert_screen.dart';
+import 'first_aid_guide_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -31,17 +31,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authStateProvider);
     final userProfileAsync = ref.watch(userProfileProvider);
 
-    final isLoggedIn = authState.when(
-      data: (user) => user != null,
-      loading: () => false,
-      error: (_, __) => false,
-    );
-    
     final userProfile = userProfileAsync.asData?.value;
     final userName = userProfile?.firstName ?? "";
+    final userLastName = userProfile?.lastName ?? "";
+    final fullName = userName.isNotEmpty ? "$userName $userLastName".trim() : "Kullanıcı";
     final profilePic = userProfile?.profilePictureUrl;
 
     return Scaffold(
@@ -52,38 +47,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         elevation: 1,
         toolbarHeight: 70,
         centerTitle: true,
-        leadingWidth: 120,
-        leading: isLoggedIn 
-          ? const SizedBox() 
-          : Padding(
-            padding: const EdgeInsets.only(left: 8.0, top: 8.0, bottom: 8.0),
-            child: InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignInScreen())),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.account_circle, size: 16, color: Colors.redAccent),
-                    Text(
-                      "Giriş / Kayıt",
-                      style: GoogleFonts.outfit(
-                        color: Colors.redAccent,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        leading: Builder(
+          builder: (ctx) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.redAccent, size: 28),
+            onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
+        ),
         title: Column(
           children: [
             Text(
@@ -95,7 +64,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 letterSpacing: 2.0,
               ),
             ),
-            if (isLoggedIn && userName.isNotEmpty)
+            if (userName.isNotEmpty)
               Text(
                 "Merhaba, $userName",
                 style: GoogleFonts.outfit(
@@ -127,6 +96,68 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           )
         ],
       ),
+      drawer: Drawer(
+        backgroundColor: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 60, bottom: 20, left: 20, right: 20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFE53935), Color(0xFFC62828)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(bottomRight: Radius.circular(30)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Colors.white,
+                    backgroundImage: (profilePic != null && profilePic.startsWith('http')) 
+                        ? NetworkImage(profilePic) : null,
+                    child: (profilePic == null || !profilePic.startsWith('http')) 
+                        ? const Icon(Icons.person, size: 35, color: Colors.redAccent) : null,
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    fullName, 
+                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "HayatEli Kullanıcısı", 
+                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _drawerItem(Icons.settings, 'Ayarlar'),
+                  _drawerItem(Icons.privacy_tip, 'Gizlilik Politikası'),
+                  _drawerItem(Icons.feedback, 'Bize Ulaşın'),
+                  _drawerItem(Icons.info, 'Uygulama Hakkında'),
+                  _drawerItem(Icons.menu_book, 'Kullanım Kılavuzu'),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Colors.black12),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.redAccent),
+              title: Text('Çıkış Yap', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.redAccent)),
+              onTap: () => _showLogoutDialog(context, ref),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -147,11 +178,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Column(
                     children: [
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: InkWell(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const FirstAidGuideScreen(),
+                              ),
+                            );
+                          },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             padding: const EdgeInsets.all(16),
@@ -200,9 +238,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 60),
                       const CustomSosButton(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 35),
                       Text(
                         "Merhaba yardıma mı ihtiyacınız var? Yukarıdaki butona basın.",
                         textAlign: TextAlign.center,
@@ -213,13 +251,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       const Spacer(),
-                      TextButton.icon(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const CrashAlertScreen()));
-                        },
-                        icon: const Icon(Icons.car_crash, color: Colors.orange),
-                        label: const Text("Kaza Test Ekranı (Geçici)", style: TextStyle(color: Colors.orange)),
-                      ),
                       const Padding(
                         padding: EdgeInsets.only(bottom: 32.0, left: 24.0, right: 24.0),
                         child: LiveLocationCard(),
@@ -231,6 +262,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           );
         }
+      ),
+    );
+  }
+  Widget _drawerItem(IconData icon, String title) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.grey.shade600),
+      title: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w500, color: Colors.black87)),
+      onTap: () {},
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: const Text('Hesabınızdan çıkış yapmak istediğinize emin misiniz?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+          TextButton(
+            onPressed: () async {
+              await ref.read(authServiceProvider).signOut();
+              ref.read(bottomNavIndexProvider.notifier).setIndex(0);
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignInScreen()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text('Çıkış Yap', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
