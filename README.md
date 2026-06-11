@@ -33,9 +33,8 @@ Uygulamanın geliştirilmesinde kullanılan teknolojiler, diller ve kütüphanel
 
 HayatEli platformunun modülleri arasındaki temel işleyiş ve veri akış süreçleri şu şekildedir:
 
-*(Eğer hazırladığınız görsel bir iş akış şeması varsa, aşağıdaki görsel alanını kullanabilirsiniz)*
-
-![HayatEli Sistem İş Akışı](docs/images/workflow.png)
+<!-- *(Eğer hazırladığınız görsel bir iş akış şeması varsa, aşağıdaki görsel alanını kullanabilirsiniz)*
+![HayatEli Sistem İş Akışı](docs/images/workflow.png) -->
 
 *   **Kullanıcı Girişi ve Profil Yönetimi:** Kullanıcılar e-posta ve SMS tabanlı iki aşamalı doğrulama (OTP) ile giriş yapar. Kullanıcının kronik hastalık, ilaç ve alerji bilgileri gibi kritik sağlık verileri güvenli şifreleme protokolleri ile hem yerel cihaz hafızasında (Hive) hem de bulut veritabanında (Firestore) senkronize olarak tutulur.
 *   **Acil Durum (SOS) Tetikleme ve İhbar Akışı:** Kullanıcı acil bir durumda ana ekrandaki **SOS butonuna 3 saniye basılı tuttuğunda** yüksek sesli bir siren çalar ve önceden belirlenen acil durum yakınlarına otomatik olarak harita konum bağlantısı içeren yardım SMS'i gönderilir.
