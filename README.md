@@ -25,7 +25,7 @@ Uygulamanın geliştirilmesinde kullanılan teknolojiler, diller ve kütüphanel
 | **Veritabanı & Bulut** | [![Firebase](https://img.shields.io/badge/Firebase-%23FFCA28.svg?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com) [![Hive](https://img.shields.io/badge/Hive_NoSQL-orange?style=for-the-badge)](https://pub.dev/packages/hive) |
 | **Yapay Zeka API** | [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com) [![Ollama](https://img.shields.io/badge/Ollama-black?style=for-the-badge)](https://ollama.com) |
 | **Haritalama** | [![Google Maps](https://img.shields.io/badge/Google_Maps-4285F4?style=for-the-badge&logo=googlemaps&logoColor=white)](https://developers.google.com/maps) |
-| **Entegrasyon** | [![n8n](https://img.shields.io/badge/n8n-FF6C37?style=for-the-badge&logo=n8n&logoColor=white)](https://n8n.io) [![EmailJS](https://img.shields.io/badge/EmailJS-gray?style=for-the-badge)](https://www.emailjs.com) |
+| **Entegrasyon** | [![EmailJS](https://img.shields.io/badge/EmailJS-gray?style=for-the-badge)](https://www.emailjs.com) |
 
 ---
 
@@ -34,7 +34,7 @@ Uygulamanın geliştirilmesinde kullanılan teknolojiler, diller ve kütüphanel
 HayatEli platformunun modülleri arasındaki temel işleyiş ve veri akış süreçleri şu şekildedir:
 
 *   **Kullanıcı Girişi ve Profil Yönetimi:** Kullanıcılar e-posta ve SMS tabanlı iki aşamalı doğrulama (OTP) ile giriş yapar. Kullanıcının kronik hastalık, ilaç ve alerji bilgileri gibi kritik sağlık verileri güvenli şifreleme protokolleri ile hem yerel cihaz hafızasında (Hive) hem de bulut veritabanında (Firestore) senkronize olarak tutulur.
-*   **Acil Durum (SOS) ve Canlı Rota Takibi:** Kullanıcı SOS butonunu tetiklediğinde, önceden belirlenen acil durum yakınlarına konum bağlantısı içeren SMS gönderilir. Aynı zamanda konum verileri şifrelenerek arka planda n8n webhook servisine aktarılır ve yakınlarının kullanıcının rotasını canlı harita üzerinden güvenle takip etmesi sağlanır.
+*   **Acil Durum (SOS) ve Canlı Rota Takibi:** Kullanıcı SOS butonunu tetiklediğinde, önceden belirlenen acil durum yakınlarına konum bağlantısı içeren SMS gönderilir. Aynı zamanda konum verileri şifrelenerek Firebase Firestore gerçek zamanlı veritabanına aktarılır ve yakınlarının kullanıcının rotasını web paneli üzerinden canlı haritada güvenle takip etmesi sağlanır.
 *   **Yapay Zeka Destekli İlk Yardım Asistanı:** Kullanıcı sesli (mikrofon) veya yazılı olarak ilk yardım sorusu sorduğunda, kullanıcının profili (alerjileri/hastalıkları) soru bağlamına otomatik olarak enjekte edilir. Güvenlik filtrelerinden geçen sorgu, yerel dil modeli (Llama 3.1) tarafından işlenerek yanıt üretilir. Yanıt arayüzde sesli olarak okunurken (TTS), ilk yardım adımları ekranda sırayla vurgulanarak gösterilir.
 
 ---
@@ -43,7 +43,7 @@ HayatEli platformunun modülleri arasındaki temel işleyiş ve veri akış sür
 
 *   **📍 Akıllı Harita ve Navigasyon:** Google Maps API desteğiyle en yakın hastanelere ve nöbetçi eczanelere dinamik yol tarifi çizimi.
 *   **🎙️ Eller Serbest Ses Entegrasyonu:** Entegre ses sentezi (TTS) ve mikrofon desteği ile sesli komut alımı ve interaktif ilk yardım adımları yönlendirmesi.
-*   **🔒 Sıfır-Bilgi Konum Paylaşımı:** n8n webhook'ları üzerinden uçtan uca şifrelenmiş canlı rota takibi.
+*   **🔒 Sıfır-Bilgi Konum Paylaşımı:** Firebase Firestore gerçek zamanlı veri akışı üzerinden şifrelenmiş canlı rota takibi.
 *   **🧠 Profil Duyarlı Yapay Zeka:** Yerel koşturulan yapay zeka asistanının, kullanıcının alerji durumuna göre ilk yardım yönergelerini dinamik olarak şekillendirmesi.
 *   **📲 Çevrimdışı Çalışabilirlik:** İnternet bağlantısının olmadığı acil durumlarda yerel veritabanı sayesinde kullanıcı profilinin ve ilk yardım kılavuzunun kesintisiz çalışması.
 
@@ -64,8 +64,9 @@ cd HayatEli_Mobil_Project
 flutter pub get
 ```
 
-### 3. API Anahtarlarını Ayarlayın
-Kök dizinde bir `.env` dosyası oluşturun ve aşağıdaki şablonu kendi anahtarlarınızla doldurun:
+### 3. API Anahtarlarını Ayarlayın (Kritik)
+Uygulama dış servislerle haberleşmek için API anahtarlarına ihtiyaç duyar. Kök dizinde bir `.env` dosyası oluşturun ve aşağıdaki şablonu doldurun:
+
 ```env
 GOOGLE_MAPS_KEY=YOUR_GOOGLE_MAPS_API_KEY
 NOSY_API_KEY=YOUR_NOSY_API_KEY
@@ -74,22 +75,54 @@ EMAILJS_TEMPLATE_ID=YOUR_EMAILJS_TEMPLATE_ID
 EMAILJS_PUBLIC_KEY=YOUR_EMAILJS_PUBLIC_KEY
 ```
 
-### 4. Arka Uç Yapay Zeka Servisini Çalıştırma (FastAPI & Ollama)
+#### 3.1. Google Maps API Key Nasıl Alınır?
+1. [Google Cloud Console](https://console.cloud.google.com/) üzerinden bir proje oluşturun.
+2. **APIs & Services > Library** kısmından şu servisleri etkinleştirin:
+   - Maps SDK for Android / iOS
+   - Directions API
+   - Places API
+3. **Credentials** sekmesinden bir API Key oluşturun.
+4. **Güvenlik İçin:** Oluşturduğunuz anahtarı Google Cloud üzerinden "API Restrictions" panelinden sadece yukarıdaki servislerle kısıtlamanız şiddetle önerilir.
+
+#### 3.2. Nosy API Key Nasıl Alınır? (Eczane Verileri)
+1. [Nosy API](https://nosyapi.com/) adresine kayıt olun.
+2. Panel üzerinden "Nöbetçi Eczane" ve "Hastane" servisleri için ücretsiz krediniz biterse ekstradan desteğe yazıp kredi alabilirsiniz.
+3. Size verilen API Key'i `.env` dosyasındaki `NOSY_API_KEY` alanına yapıştırın.
+
+#### 3.3. EmailJS Kurulumu (OTP Doğrulaması)
+1. [EmailJS](https://www.emailjs.com/) hesabınıza giriş yapın.
+2. Bir **Email Service** bağlayın.
+3. Bir **Email Template** oluşturun. Mesaj gövdesinde şu değişkenlerin bulunduğundan emin olun: 
+   - `{{otp_code}}`, `{{user_email}}`, `{{time}}`
+4. Account sekmesinden **Public Key**'i, Service sekmesinden **Service ID**'yi ve Template sekmesinden **Template ID**'yi alarak `.env` dosyasına kaydedin.
+
+### 4. Firebase Yapılandırması
+1. [Firebase Console](https://console.firebase.google.com/) üzerinden yeni bir proje oluşturun.
+2. Android ve iOS uygulamalarını projeye ekleyin.
+3. Yapılandırma dosyalarını projenize yerleştirin:
+   - Android: `android/app/google-services.json`
+   - iOS: `ios/Runner/GoogleService-Info.plist`
+4. `lib/firebase_options.dart` dosyası FlutterFire CLI tarafından oluşturulacaktır. İçerideki `apiKey` değerleri istemci tarafı tanımlayıcılardır; ancak güvenliği artırmak için Firebase Console üzerinden **App Check** özelliğini aktif etmeniz önerilir.
+
+### 5. Arka Uç Yapay Zeka Servisini Çalıştırma (FastAPI & Ollama)
 Yapay zeka asistanının çalışabilmesi için yerel API sunucusunun ayağa kaldırılması gerekmektedir:
 
 1.  **Ollama Kurulumu:** Bilgisayarınıza [Ollama](https://ollama.com) uygulamasını kurun.
-2.  **Modeli Hazırlama:** `backend_ai` klasöründeki `Modelfile` dosyasını kullanarak Llama 3.1 tabanlı ilk yardım modelini oluşturun:
+2.  **Model Dosyasını Temin Etme (2 Seçenek):**
+    *   **Seçenek A (Önerilen - Manuel İndirme):** [HuggingFace - Llama 3.1 8B Instruct Q4_K_M](https://huggingface.co/Bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf) adresinden GGUF dosyasını indirin ve `backend_ai` klasörünün içine yerleştirin.
+    *   **Seçenek B (Alternatif - Otomatik İndirme):** `backend_ai/Modelfile` dosyasını açın ve 2. satırı `FROM llama3.1` olarak değiştirin (Ollama modeli kütüphaneden kendisi çekecektir).
+3.  **Modeli Hazırlama:** `backend_ai` klasöründe şu komutu çalıştırarak ilk yardım modelini derleyin:
     ```bash
     ollama create hayat-ai -f ./Modelfile
     ```
-3.  **FastAPI Sunucusunu Başlatma:**
+4.  **FastAPI Sunucusunu Başlatma:**
     ```bash
     cd backend_ai
     pip install -r requirements.txt
     python main.py
     ```
 
-### 5. Mobil Uygulamayı Çalıştırma
+### 6. Mobil Uygulamayı Çalıştırma
 ```bash
 flutter run
 ```
@@ -99,7 +132,7 @@ flutter run
 ## 🔒 Veri Güvenliği ve Protokoller
 
 *   **Veri Şifreleme:** Bulut veritabanında saklanan tüm hassas kişisel sağlık bilgileri endüstri standartlarında şifrelenerek depolanmaktadır.
-*   **Güvenli Erişim:** Çift aşamalı SMS & E-Posta OTP doğrulama altyapısı ile yetkisiz erişimlerin önüne geçilir.
+*   **Güvenli Erişim:** Çift aşamalı SMS & E-Posta OTP doğrulama altyapısı ile yetcisiz erişimlerin önüne geçilir.
 *   **Arka Plan Koruma:** Konum takibi ve SOS SMS gönderimi gibi kritik arka plan süreçleri yetkilendirilmiş uygulama izinleriyle güvenceye alınmıştır.
 
 ---
