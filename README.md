@@ -33,19 +33,25 @@ Uygulamanın geliştirilmesinde kullanılan teknolojiler, diller ve kütüphanel
 
 HayatEli platformunun modülleri arasındaki temel işleyiş ve veri akış süreçleri şu şekildedir:
 
+*(Eğer hazırladığınız görsel bir iş akış şeması varsa, aşağıdaki görsel alanını kullanabilirsiniz)*
+
+![HayatEli Sistem İş Akışı](docs/images/workflow.png)
+
 *   **Kullanıcı Girişi ve Profil Yönetimi:** Kullanıcılar e-posta ve SMS tabanlı iki aşamalı doğrulama (OTP) ile giriş yapar. Kullanıcının kronik hastalık, ilaç ve alerji bilgileri gibi kritik sağlık verileri güvenli şifreleme protokolleri ile hem yerel cihaz hafızasında (Hive) hem de bulut veritabanında (Firestore) senkronize olarak tutulur.
-*   **Acil Durum (SOS) ve Canlı Rota Takibi:** Kullanıcı SOS butonunu tetiklediğinde, önceden belirlenen acil durum yakınlarına konum bağlantısı içeren SMS gönderilir. Aynı zamanda konum verileri şifrelenerek Firebase Firestore gerçek zamanlı veritabanına aktarılır ve yakınlarının kullanıcının rotasını web paneli üzerinden canlı haritada güvenle takip etmesi sağlanır.
-*   **Yapay Zeka Destekli İlk Yardım Asistanı:** Kullanıcı sesli (mikrofon) veya yazılı olarak ilk yardım sorusu sorduğunda, kullanıcının profili (alerjileri/hastalıkları) soru bağlamına otomatik olarak enjekte edilir. Güvenlik filtrelerinden geçen sorgu, yerel dil modeli (Llama 3.1) tarafından işlenerek yanıt üretilir. Yanıt arayüzde sesli olarak okunurken (TTS), ilk yardım adımları ekranda sırayla vurgulanarak gösterilir.
+*   **Acil Durum (SOS) Tetikleme ve İhbar Akışı:** Kullanıcı acil bir durumda ana ekrandaki **SOS butonuna 3 saniye basılı tuttuğunda** yüksek sesli bir siren çalar ve önceden belirlenen acil durum yakınlarına otomatik olarak harita konum bağlantısı içeren yardım SMS'i gönderilir.
+*   **Canlı Rota Takibi:** SOS tetiklendiği andan itibaren kullanıcının canlı GPS koordinatları şifrelenerek Firebase Firestore gerçek zamanlı veritabanına aktarılır. Yakınları, kendilerine gelen SMS'teki bağlantıya tıklayarak kullanıcının hareketlerini web paneli üzerinden canlı haritada anlık takip eder.
+*   **Yapay Zeka Destekli İlk Yardım Asistanı (Hayat AI):** Kullanıcı sesli (mikrofon) veya yazılı olarak ilk yardım sorusu sorduğunda, kullanıcının profili (alerjileri/hastalıkları) soru bağlamına otomatik olarak enjekte edilir. Güvenlik filtrelerinden geçen sorgu, yerel dil modeli (Llama 3.1) tarafından işlenerek yanıt üretilir. Yanıt arayüzde sesli olarak okunurken (TTS), ilk yardım adımları ekranda sırayla vurgulanarak gösterilir.
 
 ---
 
 ## 🌟 Öne Çıkan Özellikler
 
+*   **🆘 Akıllı SOS Butonu & Siren Sistemi:** Panik anında yanlışlıkla basılmasını önlemek amacıyla 3 saniye basılı tutma kuralına bağlı çalışan, sesli siren çalan ve yakınlara anında acil durum konum SMS'i atan akıllı SOS modülü.
+*   **📚 İnteraktif İlk Yardım Rehberi:** Bebek, çocuk ve yetişkin kategorilerine ayrılmış; internet olmasa dahi çevrimdışı (offline) çalışabilen, adımları sesli okuyan ve ilgili adımı ekranda otomatik vurgulayarak kaydıran interaktif rehber.
+*   **🧠 Profil Duyarlı Yapay Zeka (Hayat AI):** Yerel koşturulan yapay zeka asistanının, kullanıcının alerji durumuna göre ilk yardım yönergelerini dinamik olarak şekillendirmesi (örn. penisilin veya arı sokması uyarısı).
 *   **📍 Akıllı Harita ve Navigasyon:** Google Maps API desteğiyle en yakın hastanelere ve nöbetçi eczanelere dinamik yol tarifi çizimi.
 *   **🎙️ Eller Serbest Ses Entegrasyonu:** Entegre ses sentezi (TTS) ve mikrofon desteği ile sesli komut alımı ve interaktif ilk yardım adımları yönlendirmesi.
 *   **🔒 Sıfır-Bilgi Konum Paylaşımı:** Firebase Firestore gerçek zamanlı veri akışı üzerinden şifrelenmiş canlı rota takibi.
-*   **🧠 Profil Duyarlı Yapay Zeka:** Yerel koşturulan yapay zeka asistanının, kullanıcının alerji durumuna göre ilk yardım yönergelerini dinamik olarak şekillendirmesi.
-*   **📲 Çevrimdışı Çalışabilirlik:** İnternet bağlantısının olmadığı acil durumlarda yerel veritabanı sayesinde kullanıcı profilinin ve ilk yardım kılavuzunun kesintisiz çalışması.
 
 ---
 
