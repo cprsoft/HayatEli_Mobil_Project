@@ -47,3 +47,7 @@ ios/Runner/GoogleService-Info.plist
 *.gguf
 __pycache__/
 .firebase/
+
+# Web Dashboard Env
+hayateli_web_dashboard/env.js
+
